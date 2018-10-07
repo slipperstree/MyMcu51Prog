@@ -31,7 +31,7 @@
     点阵屏模块
         LATCH  - P1.0  (串行数据锁存)
         CLK    - P1.1  (串行数据时钟)
-        DI     - P1.2  (串行数据输入，有些模块上标的不是DI是R1)
+        R1     - P1.2  (串行数据输入，R1表示上屏红灯数据信号，R2下红，G1上绿，G2下绿，作者的模块是单红色板且只有32单行的上屏，所以接R1即可)
         EN     - P1.3
         A      - P1.4
         B      - P1.5
@@ -45,27 +45,94 @@
 */
 
 /*头文件*/
+#include <intrins.h>
 #include <STC89C52.h>
 #define uint unsigned int
 #define uchar unsigned char
 #define NOP() _nop_()
 
-/*端口定义*/
+#define FOSC 32000000L      //System frequency
 
-sbit EN_port = P1^3;
+// 点阵屏定义 #########################################################################################
+sbit EN_port 	= P1^3;
 sbit DA_in_port = P1^2;
-sbit CLK_port = P1^1;
+sbit CLK_port 	= P1^1;
 sbit Latch_port = P1^0;
 
-// for test led
-sbit LED = P3^7;
+#define ABCD_port P1  //HC138 ABCD端口定义
+//sbit D_port = P1^7;
+//sbit C_port = P1^6;
+//sbit B_port = P1^5;
+//sbit A_port = P1^4;
 
-// 串口操作 --------------------------------------------------------------------------------
+uchar nowOffset=0; 	// 当前左移偏移量(0-15)
+int nowPos=0;		// 当前显示第几个汉字（严格来说是第几个字节）
+
+// 一次性传给HC595用的64+16位的一整行数据（包括移位用的第五个汉字的缓冲区）
+uchar data row_data_buf[10];
+void HC595_Data_Send(uchar *p, uchar han, uchar offset);
+
+// 显示文字设置
+int showDataSize=960*2;
+uchar code textForShow[] = "汉皇重色思倾国，御宇多年求不得。杨家有女初长成，养在深闺人未识。天生丽质难自弃，一朝选在君王侧。回眸一笑百媚生，六宫粉黛无颜色。春寒赐浴华清池，温泉水滑洗凝脂。侍儿扶起娇无力，始是新承恩泽时。云鬓花颜金步摇，芙蓉帐暖度春宵。春宵苦短日高起，从此君王不早朝。承欢侍宴无闲暇，春从春游夜专夜。后宫佳丽三千人，三千宠爱在一身。金屋妆成娇侍夜，玉楼宴罢醉和春。姊妹弟兄皆列土，可怜光彩生门户。遂令天下父母心，不重生男重生女。骊宫高处入青云，仙乐风飘处处闻。缓歌慢舞凝丝竹，尽日君王看不足。渔阳鼙鼓动地来，惊破霓裳羽衣曲。九重城阙烟尘生，千乘万骑西南行。翠华摇摇行复止，西出都门百余里。六军不发无奈何，宛转蛾眉马前死。花钿委地无人收，翠翘金雀玉搔头。君王掩面救不得，回看血泪相和流。黄埃散漫风萧索，云栈萦纡登剑阁。峨嵋山下少人行，旌旗无光日色薄。蜀江水碧蜀山青，圣主朝朝暮暮情。行宫见月伤心色，夜雨闻铃肠断声。天旋日转回龙驭，到此踌躇不能去。马嵬坡下泥土中，不见玉颜空死处。君臣相顾尽沾衣，东望都门信马归。归来池苑皆依旧，太液芙蓉未央柳。芙蓉如面柳如眉，对此如何不泪垂。春风桃李花开夜，秋雨梧桐叶落时。西宫南内多秋草，落叶满阶红不扫。梨园弟子白发新，椒房阿监青娥老。夕殿萤飞思悄然，孤灯挑尽未成眠。迟迟钟鼓初长夜，耿耿星河欲曙天。鸳鸯瓦冷霜华重，翡翠衾寒谁与共。悠悠生死别经年，魂魄不曾来入梦。临邛道士鸿都客，能以精诚致魂魄。为感君王展转思，遂教方士殷勤觅。排空驭气奔如电，升天入地求之遍。上穷碧落下黄泉，两处茫茫皆不见。忽闻海上有仙山，山在虚无缥渺间。楼阁玲珑五云起，其中绰约多仙子。中有一人字太真，雪肤花貌参差是。金阙西厢叩玉扃，转教小玉报双成。闻到汉家天子使，九华帐里梦魂惊。揽衣推枕起徘回，珠箔银屏逦迤开。云鬓半偏新睡觉，花冠不整下堂来。风吹仙袂飘摇举，犹似霓裳羽衣舞。玉容寂寞泪阑干，梨花一枝春带雨。含情凝睇谢君王，一别音容两渺茫。昭阳殿里恩爱绝，蓬莱宫中日月长。回头下望人寰处，不见长安见尘雾。唯将旧物表深情，钿合金钗寄将去。钗留一股合一扇，钗擘黄金合分钿。但教心似金钿坚，天上人间会相见。临别殷勤重寄词，词中有誓两心知。七月七日长生殿，夜半无人私语时。在天愿作比翼鸟，在地愿为连理枝。天长地久有时尽，此恨绵绵无绝期。";
+//int showDataSize=297*2;
+//uchar code textForShow[] = "我们好像在哪儿见过你记得吗？好像那是一个春天我刚发芽，我走过，没有回头，我记得，我快忘了。我们好像在哪儿见过你记得吗？记得那是一个夏天盛开如花，我唱歌，没有对我，但我记得，可我快忘了。我们好像在哪见过你记得吗？好像那是一个秋天夕阳西下，你美得让我不敢和你说话，你经过我时风起浮动我的发。我们好像在哪见过你记得吗？记得那是一个冬天漫天雪花，我走过，没有回头，我记得，我快忘了。我们好像在哪见过你记得吗？那时你还是个孩子我在窗棂下，我猜着你的名字刻在了墙上，我画了你的摸样对着弯月亮我们好像在哪见过你记得吗？当我们来到今生各自天涯，天涯相望今生面对谁曾想，还能相遇一切就像梦一样。我们好像在哪见过。";
+
+// 不使用字库芯片而使用固定文字时放开这一段，并修改程序里的 bufHZ 为 ziku_table
+// 取模软件，需要指定【阴码+顺向（高位在前）+行列式】的形式
+// uchar code ziku_table[]={
+// 0x00,0x30,0xC0,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x60,0x10,/*"[",0*/
+// 0x00,0x78,0x48,0x57,0x50,0x61,0x51,0x4A,0x4B,0x48,0x69,0x51,0x42,0x44,0x40,0x40,
+// 0x40,0x40,0x40,0xFE,0x80,0x20,0x20,0x20,0xFC,0x20,0x28,0x24,0x22,0x22,0xA0,0x40,/*"陈",1*/
+// 0x00,0xFF,0x01,0x01,0x01,0x7F,0x41,0x41,0x49,0x45,0x41,0x49,0x45,0x41,0x41,0x40,
+// 0x00,0xFE,0x00,0x00,0x00,0xFC,0x04,0x04,0x44,0x24,0x04,0x44,0x24,0x04,0x14,0x08,/*"雨",2*/
+// 0x00,0xFF,0x02,0x7A,0x4A,0x7A,0x00,0xFF,0x02,0x7A,0x4A,0x4A,0x7A,0x02,0x0A,0x04,
+// 0x20,0x20,0x20,0x7E,0x42,0x84,0x10,0x10,0x10,0x10,0x28,0x28,0x28,0x44,0x44,0x82,/*"歌",3*/
+// 0x00,0xC0,0x30,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x20,0xC0,/*"]",4*/
+// };
+
+// 保存16X64点阵信息（128+32字节）（五个汉字，多一个汉字是为了移位显示用的缓冲）
+uchar xdata bufHZ[128+32] = {
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+};
+
+// 测试用的字母A的16x8点阵
+// 可直接这样显示在画面上 -> setICDataToBuffer(ic_data_A, 16, 0);
+uchar code ic_data_A[] = {0x00,0xE0,0x9C,0x82,0x9C,0xE0,0x00,0x00,0x0F,0x00,0x00,0x00,0x00,0x00,0x0F,0x00};
+
+// 字库芯片定义 ###################################################################################
+sbit pCE        =P2^0;         // 片选
+sbit pSCLK      =P2^1;         // 时钟
+sbit pSI        =P2^2;         // 数据输入（单片机->字库芯片）
+sbit pSO        =P2^3;         // 数据输出（字库芯片->单片机）
+
+unsigned long addr;
+int idx = 0;
+uchar data ic_data[32];
+
+// 从芯片取点阵
+void readICDataToBuffer(uchar* str);
+// 从芯片取点阵的子函数
+uchar* getICData_ASCII_8x16(uchar ch);
+uchar* getICData_Hanzi_16x16(uchar* hz);
+
+// 芯片取到的数据转换成适合模块的数据格式并保存在大buffer中
+void setICDataToBuffer(uchar *pICData, uchar size, uchar pos);
+
+// 串口定义 ######################################################################################
 typedef unsigned char BYTE;
 typedef unsigned int WORD;
 
 //#define FOSC 11059200L      //System frequency
-#define FOSC 32000000L      //System frequency
 #define BAUD 600           //UART baudrate
 //#define BAUD 115200           //UART baudrate
 
@@ -82,119 +149,46 @@ void SendData(BYTE dat);
 void SendString(char *s);
 void UartInit();
 
-//sbit bit9 = P2^2;           //P2.2 show UART data bit9
 bit busy;
 
-uchar rec[10]={0,0,0,0,0,0,0,0,0,0};
-uchar recIdx=0;
-// 串口操作 --------------------------------------------------------------------------------
+uchar serialRcvBuf[10]={0,0,0,0,0,0,0,0,0,0};
+uchar serialRcvIdx=0;
 
-#define ABCD_port P1  //HC138 ABCD端口定义
-//sbit D_port = P1^7;
-//sbit C_port = P1^6;
-//sbit B_port = P1^5;
-//sbit A_port = P1^4;
-
-// GT20L16S1Y 接口 ------------------------------------------------
-sbit pCE        =P2^0;         //
-sbit pSCLK      =P2^1;         //
-sbit pSI        =P2^2;         //
-sbit pSO        =P2^3;         //
-
-unsigned long addr;
-int idx = 0;
-uchar data ic_data[32];
-
-uchar* getICData_ASCII_8x16(uchar ch);
-uchar* getICData_Hanzi_16x16(uchar* hz);
-void readICDataToBuffer(uchar bufNum, uchar* str);
-
-// GT20L16S1Y 接口 ------------------------------------------------
-
-void HC595_Data_Send(uchar *p, uchar han, uchar offset);
-void setICDataToBuffer(uchar nowBufferNum, uchar *pICData, uchar size, uchar pos);
-
+// 其他定义 ######################################################################################
 //test
-void send595Byte(uchar);
+void testSetFullScreenByte(uchar);
 //test
 
-// 保存16X64点阵信息（128+32字节）（五个汉字，多一个汉字是为了移位显示用的缓冲）
-// 89C52的内存不够大，不能用双缓存，STC1260S2可以
-uchar xdata bufHZ[1][128+32] = {
-	{
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	},
-	// {
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	// 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	// }
-};
 
-uchar code ic_data_A[] = {0x00,0xE0,0x9C,0x82,0x9C,0xE0,0x00,0x00,0x0F,0x00,0x00,0x00,0x00,0x00,0x0F,0x00};
 
-uchar nowOffset=0;
-int nowPos=0;
-
-int showDataSize=960*2;
-uchar code textForShow[] = "汉皇重色思倾国，御宇多年求不得。杨家有女初长成，养在深闺人未识。天生丽质难自弃，一朝选在君王侧。回眸一笑百媚生，六宫粉黛无颜色。春寒赐浴华清池，温泉水滑洗凝脂。侍儿扶起娇无力，始是新承恩泽时。云鬓花颜金步摇，芙蓉帐暖度春宵。春宵苦短日高起，从此君王不早朝。承欢侍宴无闲暇，春从春游夜专夜。后宫佳丽三千人，三千宠爱在一身。金屋妆成娇侍夜，玉楼宴罢醉和春。姊妹弟兄皆列土，可怜光彩生门户。遂令天下父母心，不重生男重生女。骊宫高处入青云，仙乐风飘处处闻。缓歌慢舞凝丝竹，尽日君王看不足。渔阳鼙鼓动地来，惊破霓裳羽衣曲。九重城阙烟尘生，千乘万骑西南行。翠华摇摇行复止，西出都门百余里。六军不发无奈何，宛转蛾眉马前死。花钿委地无人收，翠翘金雀玉搔头。君王掩面救不得，回看血泪相和流。黄埃散漫风萧索，云栈萦纡登剑阁。峨嵋山下少人行，旌旗无光日色薄。蜀江水碧蜀山青，圣主朝朝暮暮情。行宫见月伤心色，夜雨闻铃肠断声。天旋日转回龙驭，到此踌躇不能去。马嵬坡下泥土中，不见玉颜空死处。君臣相顾尽沾衣，东望都门信马归。归来池苑皆依旧，太液芙蓉未央柳。芙蓉如面柳如眉，对此如何不泪垂。春风桃李花开夜，秋雨梧桐叶落时。西宫南内多秋草，落叶满阶红不扫。梨园弟子白发新，椒房阿监青娥老。夕殿萤飞思悄然，孤灯挑尽未成眠。迟迟钟鼓初长夜，耿耿星河欲曙天。鸳鸯瓦冷霜华重，翡翠衾寒谁与共。悠悠生死别经年，魂魄不曾来入梦。临邛道士鸿都客，能以精诚致魂魄。为感君王展转思，遂教方士殷勤觅。排空驭气奔如电，升天入地求之遍。上穷碧落下黄泉，两处茫茫皆不见。忽闻海上有仙山，山在虚无缥渺间。楼阁玲珑五云起，其中绰约多仙子。中有一人字太真，雪肤花貌参差是。金阙西厢叩玉扃，转教小玉报双成。闻到汉家天子使，九华帐里梦魂惊。揽衣推枕起徘回，珠箔银屏逦迤开。云鬓半偏新睡觉，花冠不整下堂来。风吹仙袂飘摇举，犹似霓裳羽衣舞。玉容寂寞泪阑干，梨花一枝春带雨。含情凝睇谢君王，一别音容两渺茫。昭阳殿里恩爱绝，蓬莱宫中日月长。回头下望人寰处，不见长安见尘雾。唯将旧物表深情，钿合金钗寄将去。钗留一股合一扇，钗擘黄金合分钿。但教心似金钿坚，天上人间会相见。临别殷勤重寄词，词中有誓两心知。七月七日长生殿，夜半无人私语时。在天愿作比翼鸟，在地愿为连理枝。天长地久有时尽，此恨绵绵无绝期。";
-//int showDataSize=297*2;
-//uchar code textForShow[] = "我们好像在哪儿见过你记得吗？好像那是一个春天我刚发芽，我走过，没有回头，我记得，我快忘了。我们好像在哪儿见过你记得吗？记得那是一个夏天盛开如花，我唱歌，没有对我，但我记得，可我快忘了。我们好像在哪见过你记得吗？好像那是一个秋天夕阳西下，你美得让我不敢和你说话，你经过我时风起浮动我的发。我们好像在哪见过你记得吗？记得那是一个冬天漫天雪花，我走过，没有回头，我记得，我快忘了。我们好像在哪见过你记得吗？那时你还是个孩子我在窗棂下，我猜着你的名字刻在了墙上，我画了你的摸样对着弯月亮我们好像在哪见过你记得吗？当我们来到今生各自天涯，天涯相望今生面对谁曾想，还能相遇一切就像梦一样。我们好像在哪见过。";
-
-// 取模软件，需要指定【阴码+顺向（高位在前）+行列式】的形式
-// 不使用字库芯片而使用固定文字时放开这一段，并修改程序里的 bufHZ 为 ziku_table
-// uchar code ziku_table[]={
-// 0x00,0x30,0xC0,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x60,0x10,/*"[",0*/
-
-// 0x00,0x78,0x48,0x57,0x50,0x61,0x51,0x4A,0x4B,0x48,0x69,0x51,0x42,0x44,0x40,0x40,
-// 0x40,0x40,0x40,0xFE,0x80,0x20,0x20,0x20,0xFC,0x20,0x28,0x24,0x22,0x22,0xA0,0x40,/*"陈",1*/
-
-// 0x00,0xFF,0x01,0x01,0x01,0x7F,0x41,0x41,0x49,0x45,0x41,0x49,0x45,0x41,0x41,0x40,
-// 0x00,0xFE,0x00,0x00,0x00,0xFC,0x04,0x04,0x44,0x24,0x04,0x44,0x24,0x04,0x14,0x08,/*"雨",2*/
-
-// 0x00,0xFF,0x02,0x7A,0x4A,0x7A,0x00,0xFF,0x02,0x7A,0x4A,0x4A,0x7A,0x02,0x0A,0x04,
-// 0x20,0x20,0x20,0x7E,0x42,0x84,0x10,0x10,0x10,0x10,0x28,0x28,0x28,0x44,0x44,0x82,/*"歌",3*/
-
-// 0x00,0xC0,0x30,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x20,0xC0,/*"]",4*/
-// };
-
-// 一次性传给HC595用的64+16位的一整行数据（包括移位用的第五个汉字的缓冲区）
-uchar data row_data_buf[10];
-
-int tt = 0;
-int tt1 = 0;
-void Timer0Init(void)		//20毫秒@30.000MHz
+int ttTimer0 = 0;
+void Timer0Init(void)		//30us@32.000MHz@6T
 {
-	EA=1;
-    ET0=1;
-	
-	//AUXR &= 0x7F;		//定时器时钟12T模式
-	TMOD &= 0xF0;		//设置定时器模式
-	TMOD |= 0x01;		//设置定时器模式
-	TL0 = 0xB0;		//设置定时初值
-	TH0 = 0x3C;		//设置定时初值
+	EA=0;
+
+	TMOD &= 0xF0;	//设置定时器模式
+	TMOD |= 0x02;	//设置定时器模式（8位自动重载）
+	TL0 = 0x60;		//设置定时初值(30us@6T@@32.000MHz)
+	TH0 = 0x60;		//设置定时初值(30us@6T@32.000MHz)
 	TF0 = 0;		//清除TF0标志
 	TR0 = 1;		//定时器0开始计时
+    ET0 = 1;
+
+	EA=1;
+}
+
+int ttTimer2 = 0;
+#define T1MS (65536-FOSC/6/1000)    //FOSC/6的这个6表示下载时指定了6T模式，如果是默认12T则改成12
+void Timer2Init(void)
+{
+	RCAP2L = TL2 = T1MS;            //initial timer2 low byte
+    RCAP2H = TH2 = T1MS >> 8;       //initial timer2 high byte
+    TR2 = 1;                        //timer2 start running
+    ET2 = 1;                        //enable timer2 interrupt
+    EA = 1;                         //open global interrupt switch
 }
 
 uchar rowIdx=0; // 第几行
-uchar nowBufferNum=0;
 void display(){
 	uchar i;
 	
@@ -214,7 +208,7 @@ void display(){
 		// ——————————————————————————————————————————————————————————
 		// B15	B31		B47		B63		B79		B95		B111	B127
 		// ——————————————————————————————————————————————————————————
-		row_data_buf[i]=bufHZ[nowBufferNum][i*16 + rowIdx];
+		row_data_buf[i]=bufHZ[i*16 + rowIdx];
 	}
 	
 	// 将上面取到的一整行数据串行输出给74HC595阵列，点亮当前行的数据
@@ -229,39 +223,41 @@ void display(){
 
 void main()
 {
-//	UartInit();
+//	UartInit(); //使用Timer1作为波特率发生器
 	
 	Timer0Init();
+
+	Timer2Init();
 	
 	// For test --------------------------------------------------------------------------------
-	//readICDataToBuffer(nowBufferNum, getICData_Hanzi_16x16("全"), 32, 0);
-	readICDataToBuffer(nowBufferNum, textForShow);
-	//readICDataToBuffer(nowBufferNum,"汉汉皇皇");
+	//readICDataToBuffer( getICData_Hanzi_16x16("全"), 32, 0);
+	readICDataToBuffer(textForShow);
+	//readICDataToBuffer("汉汉皇皇");
 	
-	//setICDataToBuffer(nowBufferNum, getICData_ASCII_8x16('A'), 16, 0);
-	//setICDataToBuffer(nowBufferNum, ic_data_A, 16, 0);
+	//setICDataToBuffer(getICData_ASCII_8x16('A'), 16, 0);
+	//setICDataToBuffer(ic_data_A, 16, 0);
 	// For test --------------------------------------------------------------------------------
 
 	// while (1){
-	// 	display();	
-	// 	if(recIdx >= 8){
-	// 		readICDataToBuffer(nowBufferNum,rec);
-	// 		recIdx=0;
+	// 	display();
+	//  //串口接收到文本显示在画面上 还需要修改	
+	// 	if(serialRcvIdx >= 8){
+	// 		readICDataToBuffer(serialRcvBuf);
+	// 		serialRcvIdx=0;
 	// 	}
 	// }
 
-    // send595Byte(0xf0);
-    // send595Byte(0xff);
-    // send595Byte(0x00);
-    // send595Byte(0x0f);
-    while(1){display();};
+    while(1){
+		display();
+		//testSetFullScreenByte(0xff);
+	}
 }
 
 // 将接收到的IC点阵数据存入缓冲区用于显示
 // pICData	- 接收到的点阵数组
 // size		- 点阵数组的大小。通常汉字为32字节，半角ASCII码为16字节。
 // pos		- 指定该点阵数据显示的开始位置(0-7)，以8位（列）为一个单位。会覆盖原来的数据。
-void setICDataToBuffer(uchar bufNum, uchar *pICData, uchar size, uchar pos)
+void setICDataToBuffer(uchar *pICData, uchar size, uchar pos)
 {
 	// ############# 从字库芯片GT20L16S1Y取出的点阵信息是竖置横列模式（例：字母A） ############# 
 	// 从字库芯片GT20L16S1Y取出的点阵信息是竖置横列模式，也就是以竖排为单位取到的数据
@@ -314,7 +310,7 @@ void setICDataToBuffer(uchar bufNum, uchar *pICData, uchar size, uchar pos)
 	uchar* pTmpByteBufHZ;
 	
 	//clear target data
-	//memset(&bufHZ[nowBufferNum][pos*16], size, 0x00);
+	//memset(&bufHZ[pos*16], size, 0x00);
 	
 	switch(size){
 		case 32:
@@ -327,7 +323,7 @@ void setICDataToBuffer(uchar bufNum, uchar *pICData, uchar size, uchar pos)
 			//     大buff的B16-B23 的数据从IC数据的B8-B15  中取出来（行列互换）
 			//     大buff的B24-B31 的数据从IC数据的B24-B31 中取出来（行列互换）
 			for (bufByteIdx=0; bufByteIdx<size; bufByteIdx++){
-				pTmpByteBufHZ = &(bufHZ[bufNum][pos*16 + bufByteIdx]);
+				pTmpByteBufHZ = &(bufHZ[pos*16 + bufByteIdx]);
 				//display();//test
 				// 先清空目标字节
 				pTmpByteBufHZ[0] = 0x00;
@@ -392,7 +388,7 @@ void setICDataToBuffer(uchar bufNum, uchar *pICData, uchar size, uchar pos)
 			for (bufByteIdx=0; bufByteIdx<size; bufByteIdx++){
 				//display();//test
 					
-				pTmpByteBufHZ = &(bufHZ[bufNum][pos*16 + bufByteIdx]);
+				pTmpByteBufHZ = &(bufHZ[pos*16 + bufByteIdx]);
 				
 				// 先清空目标字节
 				pTmpByteBufHZ[0] = 0x00;
@@ -435,7 +431,7 @@ void setICDataToBuffer(uchar bufNum, uchar *pICData, uchar size, uchar pos)
 }
 
 // 暂时只支持最前面的8个字节的显示（8个半角或4个全角）
-void readICDataToBuffer(uchar bufNum, uchar* str){
+void readICDataToBuffer(uchar* str){
 	uchar pos;
 	
 	// GB2312-80编码的编码范围是高位0xa1－0xfe，低位是 0xa1-0xfe ，
@@ -443,11 +439,11 @@ void readICDataToBuffer(uchar bufNum, uchar* str){
 	for (pos=0; pos<10; pos++){
 		if (str[pos] >= 0x20 && str[pos] <= 0x7E) {
 			// 判定为半角ASCII码，调用ASCII码的取点阵函数并存放在当前的显示位置上
-			setICDataToBuffer(bufNum, getICData_ASCII_8x16(str[pos]), 16, pos); 
+			setICDataToBuffer(getICData_ASCII_8x16(str[pos]), 16, pos); 
 		} else {
 			// 判定为全角汉字（其实还有很多别的可能比如日文汉字，这里我们默认输入的字符串是GB2312编码）
 			// 调用汉字的取点阵函数并存放在当前的显示位置上
-			setICDataToBuffer(bufNum, getICData_Hanzi_16x16(&str[pos]), 32, pos);
+			setICDataToBuffer(getICData_Hanzi_16x16(&str[pos]), 32, pos);
 			pos++;//由于汉字占两个字节，这里手动让循环变量跳过下一个字节
 		}
 	}
@@ -608,55 +604,22 @@ void HC595_Data_Send(uchar *p, uchar han, uchar offset)
 
 }
 
-uchar isLeft=0;
-void timer0() interrupt 1
+// 定时器0中断优先级高，把扫描屏幕的工作放在这里做
+// 不让取数据的动作干扰画面显示
+void Timer0() interrupt 1
 {
-	// 20ms
-	tt++;
-	TL0 = 0xB0;		//设置定时初值
-	TH0 = 0xFC;		//设置定时初值
+	// 30us一次
+	// ttTimer0++;
+
+	// // 30ms一次
+	// if (ttTimer0 >= 5) {
+	// 	ttTimer0 = 0;
+		
+	// }
+	TR0=0;
 	
-	//if(tt >= 50){
-	if(tt >= 300){
-		// 1s
-		tt = 0;
-		
-		// if(isLeft==0){
-			// nowOffset++;
-			// if(nowOffset==16){
-				// isLeft=1;
-			// }
-		// } else {
-			// nowOffset--;
-			// if(nowOffset==0){
-				// isLeft=0;
-			// }
-		// }
-		
-		if(nowOffset==15){
-			
-			EN_port = 1; //off screen
-			
-			nowOffset=0;
-			
-			readICDataToBuffer(0, &textForShow[nowPos+=2]);
-			
-			//为了避免读新的汉字数据占用大量时间导致显示时间不均匀整个屏幕会闪烁的问题
-			//读取ic数据时也需要调用display函数
-			if(nowPos>=(showDataSize-8)) nowPos=0;
-			
-			EN_port = 0; //on screen
-		} else {
-			nowOffset++;
-		}
-	}
+	//TR0=1;
 }
-
-
-
-
-
-
 
 
 
@@ -673,7 +636,7 @@ void UartInit(){
 	#endif
 
 	TMOD = 0x20;            //Set Timer1 as 8-bit auto reload mode
-	TH1 = TL1 = -(FOSC/12/32/BAUD); //Set auto-reload vaule
+	TH1 = TL1 = -(FOSC/6/32/BAUD); //Set auto-reload vaule(FOSC/6的这个6表示下载时指定了6T模式，如果是默认12T则改成12)
 	TR1 = 1;                //Timer1 start run
 	ES = 1;                 //Enable UART interrupt
 	EA = 1;                 //Open master interrupt switch
@@ -691,30 +654,13 @@ void Uart_Isr() interrupt 4 using 1
     if (RI)
     {
         RI = 0;             //Clear receive interrupt flag
-        //P0 = SBUF;          //P0 show UART data
-        //bit9 = RB8;         //P2.2 show parity bit
-		
-		
 		
 		if(SBUF == 0x55){
-			LED^=1;
-			recIdx=0;
+			serialRcvIdx=0;
 		} else {
-			rec[recIdx] = SBUF;
-			recIdx++;
-			
-			// if(recIdx==8){
-				// TR0=0;
-				// nowOffset = 0;
-				// recIdx=0;
-				
-				// LED^=1;
-			// }
+			serialRcvBuf[serialRcvIdx] = SBUF;
+			serialRcvIdx++;
 		}
-		
-		//SendData("OK好了");
-		//setICDataToBuffer(nowBufferNum, getICData_ASCII_8x16(SBUF), 16, 3);
-		//setICDataToBuffer(nowBufferNum, ic_data_A, 16, 1);
     }
     if (TI)
     {
@@ -728,15 +674,9 @@ Send a byte data to UART
 Input: dat (data to be sent)
 Output:None
 ----------------------------*/
-int ttt=0;
 void SendData(BYTE dat)
 {
     while (busy){
-		ttt++;
-		if(ttt>1000){
-			ttt = 0;
-			LED^=1;
-		}
 	}           //Wait for the completion of the previous data is sent
     ACC = dat;              //Calculate the even parity bit P (PSW.0)
     if (P)                  //Set the parity bit according to P
@@ -773,27 +713,67 @@ void SendString(char *s)
 }
 
 
-
-void send595Byte(uchar bData)
+void Timer2() interrupt 5
 {
+	// 1ms一次
+	ttTimer2++;
+	
+	if(ttTimer2 >= 200){
+		ttTimer2 = 0;
+		
+		if(nowOffset==15){
+			
+			//EN_port = 1; //off screen
+			
+			nowOffset=0;
+			
+			// 这里花费的时间比较长会让屏幕闪烁一下要改善
+			readICDataToBuffer(&textForShow[nowPos+=2]);
+			
+			//为了避免读新的汉字数据占用大量时间导致显示时间不均匀整个屏幕会闪烁的问题
+			//读取ic数据时也需要调用display函数
+			if(nowPos>=(showDataSize-8)) nowPos=0;
+			
+			//EN_port = 0; //on screen
+		} else {
+			nowOffset++;
+		}
+	}
+
+	// 定时器2的TF2标志位必须手动清零（定时器0或1硬件自动清零）
+    TF2 = 0;
+}
+
+
+
+// test---------------------------------------------------------------
+// 将整个屏幕所有数据设置成同一个数据(如果传入0xFF就是全部点亮)
+// 本函数用于测试LED板子，需要放在主程序while循环中才可以（模块需要不停扫描否则不显示）
+void testSetFullScreenByte(uchar bData)
+{
+	uchar row=0;
 	uchar i=0;
 	uchar temp=0;
 	Latch_port = 0;  /*HC595锁定输出,避免数据传输过程中，屏数据变化从而显示闪烁*/
 	CLK_port = 0;
 	
-	for(i=0;i<8;i++){
-        if(((bData<<i)&0x80)!=0) DA_in_port = 0;
-        else DA_in_port = 1;
-        CLK_port = 1;
-        CLK_port = 0;
-    }
+	for(row = 0; row < 16; row++)
+	{
+		for(temp=0;temp<8;temp++){
+			for(i=0;i<8;i++){
+				if(((bData<<i)&0x80)!=0) DA_in_port = 0;
+				else DA_in_port = 1;
+				CLK_port = 1;
+				CLK_port = 0;
+			}
+		}
 
-	EN_port = 1; /*关屏显示，原理为使HC138输出全为1，从而三极管截止，点阵不显示*/
+		EN_port = 1; /*关屏显示，原理为使HC138输出全为1，从而三极管截止，点阵不显示*/
 
-	ABCD_port = (ABCD_port & 0x0f)|(0<<4);
+		ABCD_port = (ABCD_port & 0x0f)|(row<<4);
 
-	Latch_port = 1; /*允许HC595数据输出到Q1-Q8端口*/
-	EN_port = 0; /*HC138输出有效，打开显示*/
-	Latch_port = 0;	/*锁定HC595数据输出*/
-
+		Latch_port = 1; /*允许HC595数据输出到Q1-Q8端口*/
+		EN_port = 0; /*HC138输出有效，打开显示*/
+		Latch_port = 0;	/*锁定HC595数据输出*/
+	}
 }
