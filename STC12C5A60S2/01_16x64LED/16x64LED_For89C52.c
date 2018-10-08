@@ -59,7 +59,7 @@
 #define NOP() _nop_()
 
 #define FOSC 32000000L      // 系统晶振频率
-#define SCROLL_SPEED 10    // 文字滚动速度（5-500）越小越快
+#define SCROLL_SPEED 10    // 文字滚动速度（10-200）越小越快（将Timer2的定时初值修改的大一些，效果更明显，但是太快的话有最下面一行会相对较亮）
 
 // 点阵屏定义 #########################################################################################
 sbit EN_port 	= P1^3;
@@ -222,7 +222,7 @@ void Timer2Init(void)
 	T2MOD = 0;				//初始化模式寄存器
 	T2CON = 0;				//初始化控制寄存器
 	RCAP2L = TL2 = 0x2B;	//设置定时初值和重载值(1ms@32M@6T)
-	RCAP2H = TH2 = 0xEB;	//设置定时初值和重载值(1ms@32M@6T)
+	RCAP2H = TH2 = 0xFB;	//经验值：EB比较合适画面最稳定，但FB滚动更迅速。设置定时初值和重载值(1ms@32M@6T)
 	TR2 = 1;				//定时器2开始计时
     ET2 = 1;                //enable timer2 interrupt
     EA = 1;                 //open global interrupt switch
