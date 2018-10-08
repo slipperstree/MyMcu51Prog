@@ -51,7 +51,8 @@
 #define uchar unsigned char
 #define NOP() _nop_()
 
-#define FOSC 32000000L      //System frequency
+#define FOSC 32000000L      // 系统晶振频率
+#define SCROLL_SPEED 20    // 文字滚动速度（5-500）越小越快
 
 // 点阵屏定义 #########################################################################################
 sbit EN_port 	= P1^3;
@@ -65,12 +66,46 @@ sbit Latch_port = P1^0;
 //sbit B_port = P1^5;
 //sbit A_port = P1^4;
 
-uchar nowOffset=0; 	// 当前左移偏移量(0-15)
-int nowPos=0;		// 当前显示第几个汉字（严格来说是第几个字节）
+// 大Buffer
+// 保存16X64点阵信息（128+32字节）（五个汉字，多一个汉字是为了移位显示用的缓冲）
+// ——————————————————————————————————————————————————————————
+// B0	B16		B32		B48		B64		B80		B96		B112
+// ——————————————————————————————————————————————————————————
+// B1	B17		.		.		.       .       .       .
+// ——————————————————————————————————————————————————————————
+// B2	B18		.		.		.       .       .       .
+// ——————————————————————————————————————————————————————————
+// .	.		.       .       .       .       .       .
+// .	.		.       .       .       .       .       .
+// .	.		.       .       .       .       .       .
+// ——————————————————————————————————————————————————————————
+// B15	B31		B47		B63		B79		B95		B111	B127
+// ——————————————————————————————————————————————————————————
+uchar xdata bufHZ[128+32] = {
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+};
+
+uchar nowShiftOffset=0; 	// 当前左移偏移量(0-15)
+int nowShowTextPos=0;		// 当前显示第几个汉字（严格来说是第几个字节）
 
 // 一次性传给HC595用的64+16位的一整行数据（包括移位用的第五个汉字的缓冲区）
 uchar data row_data_buf[10];
 void HC595_Data_Send(uchar *p, uchar han, uchar offset);
+
+// 画面刷新到一半时不允许左移
+bit isShowing = 0;
+
+// 左移函数 （包括从IC取最右边的一列数据，存入大buffer，同时更新当前偏移位置）
+void shiftLeft(void);
 
 // 显示文字设置
 int showDataSize=960*2;
@@ -91,20 +126,6 @@ uchar code textForShow[] = "汉皇重色思倾国，御宇多年求不得。杨家有女初长成，养在
 // 0x00,0xC0,0x30,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x20,0xC0,/*"]",4*/
 // };
 
-// 保存16X64点阵信息（128+32字节）（五个汉字，多一个汉字是为了移位显示用的缓冲）
-uchar xdata bufHZ[128+32] = {
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-};
-
 // 测试用的字母A的16x8点阵
 // 可直接这样显示在画面上 -> setICDataToBuffer(ic_data_A, 16, 0);
 uchar code ic_data_A[] = {0x00,0xE0,0x9C,0x82,0x9C,0xE0,0x00,0x00,0x0F,0x00,0x00,0x00,0x00,0x00,0x0F,0x00};
@@ -119,11 +140,12 @@ unsigned long addr;
 int idx = 0;
 uchar data ic_data[32];
 
-// 从芯片取点阵
+// 从芯片取当前文字当前偏移量下的完整点阵
 void readICDataToBuffer(uchar* str);
 // 从芯片取点阵的子函数
 uchar* getICData_ASCII_8x16(uchar ch);
 uchar* getICData_Hanzi_16x16(uchar* hz);
+void getICData_Hanzi_16x16_Col(uchar* hz, uchar colIdx, uchar* colData);
 
 // 芯片取到的数据转换成适合模块的数据格式并保存在大buffer中
 void setICDataToBuffer(uchar *pICData, uchar size, uchar pos);
@@ -168,8 +190,8 @@ void Timer0Init(void)		//30us@32.000MHz@6T
 
 	TMOD &= 0xF0;	//设置定时器模式
 	TMOD |= 0x02;	//设置定时器模式（8位自动重载）
-	TL0 = 0x60;		//设置定时初值(30us@6T@@32.000MHz)
-	TH0 = 0x60;		//设置定时初值(30us@6T@32.000MHz)
+	TL0 = 0xb0;		//设置定时初值(30us@6T@@32.000MHz)
+	TH0 = 0xb0;		//设置定时初值(30us@6T@32.000MHz)
 	TF0 = 0;		//清除TF0标志
 	TR0 = 1;		//定时器0开始计时
     ET0 = 1;
@@ -194,26 +216,12 @@ void display(){
 	
 	// 循环从大buffer中取当前行从左到右的全部8个字节作为一整行数据保存在显示用的buff中
 	for (i=0;i<10;i++){
-		// 下面是大buffer的示意图，每次需要取一行的数据
-		// ——————————————————————————————————————————————————————————
-		// B0	B16		B32		B48		B64		B80		B96		B112   --> 一整行数据传给595输出
-		// ——————————————————————————————————————————————————————————
-		// B1	B17		.		.		.       .       .       .
-		// ——————————————————————————————————————————————————————————
-		// B2	B18		.		.		.       .       .       .
-		// ——————————————————————————————————————————————————————————
-		// .	.		.       .       .       .       .       .
-		// .	.		.       .       .       .       .       .
-		// .	.		.       .       .       .       .       .
-		// ——————————————————————————————————————————————————————————
-		// B15	B31		B47		B63		B79		B95		B111	B127
-		// ——————————————————————————————————————————————————————————
 		row_data_buf[i]=bufHZ[i*16 + rowIdx];
 	}
 	
 	// 将上面取到的一整行数据串行输出给74HC595阵列，点亮当前行的数据
-	HC595_Data_Send(row_data_buf,rowIdx,nowOffset);
-	
+	HC595_Data_Send(row_data_buf,rowIdx,nowShiftOffset);
+			
 	// 当前行数加1，继续下一行的扫描
 	rowIdx++;
 	
@@ -223,15 +231,16 @@ void display(){
 
 void main()
 {
-//	UartInit(); //使用Timer1作为波特率发生器
-	
-	Timer0Init();
+	// 每次从最右端（nowShowTextPos+8的汉字）开始左移进来
+	nowShowTextPos = -8;
 
-	Timer2Init();
+//	UartInit(); //使用Timer1作为波特率发生器
+	Timer0Init();
+//  Timer2Init(); //事实证明，不用2个定时器就可以处理好，关键是精准控制行扫描和左移时间
 	
 	// For test --------------------------------------------------------------------------------
 	//readICDataToBuffer( getICData_Hanzi_16x16("全"), 32, 0);
-	readICDataToBuffer(textForShow);
+//	readICDataToBuffer(textForShow);
 	//readICDataToBuffer("汉汉皇皇");
 	
 	//setICDataToBuffer(getICData_ASCII_8x16('A'), 16, 0);
@@ -248,7 +257,7 @@ void main()
 	// }
 
     while(1){
-		display();
+		//display();
 		//testSetFullScreenByte(0xff);
 	}
 }
@@ -261,25 +270,25 @@ void setICDataToBuffer(uchar *pICData, uchar size, uchar pos)
 {
 	// ############# 从字库芯片GT20L16S1Y取出的点阵信息是竖置横列模式（例：字母A） ############# 
 	// 从字库芯片GT20L16S1Y取出的点阵信息是竖置横列模式，也就是以竖排为单位取到的数据
-	// ---- 下面从芯片取到的字母A的点阵数据 竖置横排的 ---- 
-	// B0	B1	B2	B3	B4	B5	B6	B7
-	// 0	0	0	0	0	0	0	0
-	// 0	0	0	●	0	0	0	0
-	// 0	0	●	0	●	0	0	0
-	// 0	0	●	0	●	0	0	0
-	// 0	0	●	0	●	0	0	0
-	// 0	●	0	0	0	●	0	0
-	// 0	●	0	0	0	●	0	0
-	// 0	●	●	●	●	●	0	0
-	// B8	B9	B10	B11	B12	B13	B14	B15
-	// ●	0	0	0	0	0	●	0
-	// ●	0	0	0	0	0	●	0
-	// ●	0	0	0	0	0	●	0
-	// ●	0	0	0	0	0	●	0
-	// 0	0	0	0	0	0	0	0
-	// 0	0	0	0	0	0	0	0
-	// 0	0	0	0	0	0	0	0
-	// 0	0	0	0	0	0	0	0
+	// ---- 下面从芯片取到的字母A的点阵数据 竖置横排的（而且是高位在下面，低位在上面） ---- 
+	//       B0	B1	B2	B3	B4	B5	B6	B7
+	// bit0  0	0	0	0	0	0	0	0
+	// bit1  0	0	0	●	0	0	0	0
+	// bit2  0	0	●	0	●	0	0	0
+	// bit3  0	0	●	0	●	0	0	0
+	// bit4  0	0	●	0	●	0	0	0
+	// bit5  0	●	0	0	0	●	0	0
+	// bit6  0	●	0	0	0	●	0	0
+	// bit7  0	●	●	●	●	●	0	0
+	//       B8	B9	B10	B11	B12	B13	B14	B15
+	// bit0  ●	0	0	0	0	0	●	0
+	// bit1  ●	0	0	0	0	0	●	0
+	// bit2  ●	0	0	0	0	0	●	0
+	// bit3  ●	0	0	0	0	0	●	0
+	// bit4  0	0	0	0	0	0	0	0
+	// bit5  0	0	0	0	0	0	0	0
+	// bit6  0	0	0	0	0	0	0	0
+	// bit7  0	0	0	0	0	0	0	0
 	// 而手头的这款点阵屏的驱动方式是行驱动，也就是每次扫描时需要传入一整行的点阵信息
 	// 所以需要把每次取到的点阵信息转存到横置竖排（也就是汉字取模软件中的“行列式”）形式的buf中去，
 	// 显示时从buf中取连续的一整行的8个字节的数据串行传入595用于扫描显示
@@ -287,6 +296,7 @@ void setICDataToBuffer(uchar *pICData, uchar size, uchar pos)
 	// 那么，转存以后应该是下面这个样子（右侧的数据省略）
 	// 也就是说要将取到的B0-B7的最高位组合成buf里的一个字节B0（字符A为例就是0x00）
 	// 将取到的B0-B7的次高位组合成buf里的字节B1（字符A为例就是0x10）
+	//     bit7 ---------------------- bit0
 	// B0	0	0	0	0	0	0	0	0
 	// B1	0	0	0	●	0	0	0	0
 	// B2	0	0	●	0	●	0	0	0
@@ -584,15 +594,15 @@ void HC595_Data_Send(uchar *p, uchar han, uchar offset)
 		}
 	}
 	
-	// 为了实现左移效果，继续送第五个汉字缓冲区当前偏移的位数
-	for(i=0;i<offset;i++){
-		// 根据位移量分别使用第五个汉字的高八位或第八位
-		data_buff = &p[temp + (i+8)/8-1]; //TODO
-		if(((data_buff[0]<<(i%8))&0x80)!=0) DA_in_port = 0;
-		else DA_in_port = 1;
-		CLK_port = 1;
-		CLK_port = 0;
-	}
+	// // 为了实现左移效果，继续送第五个汉字缓冲区当前偏移的位数
+	// for(i=0;i<offset;i++){
+	// 	// 根据位移量分别使用第五个汉字的高八位或第八位
+	// 	data_buff = &p[temp + (i+8)/8-1]; //TODO
+	// 	if(((data_buff[0]<<(i%8))&0x80)!=0) DA_in_port = 0;
+	// 	else DA_in_port = 1;
+	// 	CLK_port = 1;
+	// 	CLK_port = 0;
+	// }
 
 	EN_port = 1; /*关屏显示，原理为使HC138输出全为1，从而三极管截止，点阵不显示*/
 
@@ -604,21 +614,30 @@ void HC595_Data_Send(uchar *p, uchar han, uchar offset)
 
 }
 
-// 定时器0中断优先级高，把扫描屏幕的工作放在这里做
-// 不让取数据的动作干扰画面显示
 void Timer0() interrupt 1
 {
 	// 30us一次
-	// ttTimer0++;
 
-	// // 30ms一次
-	// if (ttTimer0 >= 5) {
-	// 	ttTimer0 = 0;
-		
-	// }
-	TR0=0;
-	
-	//TR0=1;
+	// 行扫描----------------
+	// 每扫描一次，全局变量rowIdx自加一，一直到15再回到0
+	display();
+
+	// 左移----------------
+	ttTimer0++;
+	// 当行扫描一帧结束时，并且滚动时间间隔到了
+	// 进行左移
+	// 判断rowIdx=0的作用是，左移处理只允许在画面完整的一帧扫描完以后才可以做
+	// 这样可以避免画面闪烁。因为左移处理中需要读取字库芯片等耗时的操作
+	// 如果任意打断画面扫描，整个画面会不规则闪烁
+	// 最理想的是每两行扫描之间的那点时间足够执行完左移操作
+	// 也就是左移花费的时间要尽量少于当前定时器0的中断间隔
+	if ( rowIdx == 0 && ttTimer0 >= SCROLL_SPEED) {
+		ttTimer0 = 0;
+		// 左移1位
+		//EN_port = 1; //off screen
+		shiftLeft();
+		//EN_port = 0; //on screen
+	}
 }
 
 
@@ -718,33 +737,99 @@ void Timer2() interrupt 5
 	// 1ms一次
 	ttTimer2++;
 	
-	if(ttTimer2 >= 200){
+	if(ttTimer2 >= 100){
 		ttTimer2 = 0;
-		
-		if(nowOffset==15){
-			
-			//EN_port = 1; //off screen
-			
-			nowOffset=0;
-			
-			// 这里花费的时间比较长会让屏幕闪烁一下要改善
-			readICDataToBuffer(&textForShow[nowPos+=2]);
-			
-			//为了避免读新的汉字数据占用大量时间导致显示时间不均匀整个屏幕会闪烁的问题
-			//读取ic数据时也需要调用display函数
-			if(nowPos>=(showDataSize-8)) nowPos=0;
-			
-			//EN_port = 0; //on screen
-		} else {
-			nowOffset++;
-		}
+
+		// 左移1位
+		EN_port = 1; //off screen
+		shiftLeft();
+		EN_port = 0; //on screen
 	}
 
 	// 定时器2的TF2标志位必须手动清零（定时器0或1硬件自动清零）
     TF2 = 0;
 }
 
+// 画面左移一位
+void shiftLeft() {
 
+	uchar idx = 0;
+
+	// 从IC取得右侧将要移入的列数据（上下各一个字节）
+	uchar shiftInColData[2] = {0x00,0x00};
+	getICData_Hanzi_16x16_Col(&textForShow[nowShowTextPos+8], nowShiftOffset, shiftInColData);
+
+	// 大Buffer全体左移一位（TODO 本来做缓冲用的第5个汉字不用管了，将来这个汉字的缓冲区也要删掉不用）
+	for (idx=0; idx<128; idx++){
+		// 先左移1位
+		bufHZ[idx]<<=1;
+		// 最低位用相邻右侧数据的最高位填充
+		bufHZ[idx] |= ((bufHZ[idx+16]>>7)&0x01);
+	}
+
+	// 取到的上下两个纵列字节()的数据的每一位写入大buffer最右侧
+	// 也就是写入B112-B127这16个字节的最低位
+	// <大Buff最右侧数据>
+	// B112   ...bit0 <- shiftInColData[0]的 bit0
+	// ...
+	// B119   ...bit0 <- shiftInColData[0]的 bit7
+	// B120   ...bit0 <- shiftInColData[1]的 bit0
+	// ...
+	// B127   ...bit0 <- shiftInColData[1]的 bit7
+	for(idx = 0; idx < 8; idx++)
+	{
+		bufHZ[idx+112] &= 0xFE; // 112-119 清零最低位
+		bufHZ[idx+120] &= 0xFE; // 120-127 清零最低位
+		
+		if ((shiftInColData[0]<<(7-idx) & 0x80) == 0x80 )  {
+			bufHZ[idx+112] |= 0x01; // 112-119 最低位置1
+		}
+
+		if ((shiftInColData[1]<<(7-idx) & 0x80) == 0x80 )  {
+			bufHZ[idx+120] |= 0x01; // 120-127 最低位置1
+		}
+	}
+
+	// 偏移量加一，通知显示子函数刷新画面
+	if(nowShiftOffset==15){
+		nowShiftOffset=0;
+		nowShowTextPos+=2;  // 一个汉字即2个字节
+		if(nowShowTextPos>=(showDataSize-8)) nowShowTextPos=0;
+	} else {
+		nowShiftOffset++;
+	}
+}
+
+// 取得指定汉字的指定列的点阵数据（两个字节）
+void getICData_Hanzi_16x16_Col(uchar* hz, uchar colIdx, uchar* colData) {
+	unsigned long hzGBCodeH8, hzGBCodeL8;
+
+	// 先清空目标字节
+	colData[0] = 0x00;
+	colData[1] = 0x00;
+	
+	// 由于后面有地址的计算，所以必须使用可容纳大数的long型作为中间变量，否则做地址运算时会溢出
+	// 直接将uchar型赋值给long型的话，没有赋值到的高位有可能乱掉，所以跟0xFF相与一次，确保只留下uchar部分的数据
+	hzGBCodeH8 = hz[0] & 0xFF;
+	hzGBCodeL8 = hz[1] & 0xFF;
+	
+	// GB2312汉字所在地址的计算公式
+	if(hzGBCodeH8 ==0xA9 && hzGBCodeL8 >=0xA1)
+		addr = (282 + (hzGBCodeL8 - 0xA1 ))*32;
+	else if(hzGBCodeH8 >=0xA1 && hzGBCodeH8 <= 0xA3 && hzGBCodeL8 >=0xA1)
+		addr =( (hzGBCodeH8 - 0xA1) * 94 + (hzGBCodeL8 - 0xA1))*32;
+	else if(hzGBCodeH8 >=0xB0 && hzGBCodeH8 <= 0xF7 && hzGBCodeL8 >=0xA1) {
+		// addr = ((hzGBCodeH8 - 0xB0) * 94 + (hzGBCodeL8 - 0xA1)+ 846)*32;
+		addr = (hzGBCodeH8 - 0xB0) * 94;
+		addr += (hzGBCodeL8 - 0xA1) + 846;
+		addr *= 32;
+	}
+	
+	// 调用一次取数据（取整个汉字的数据）的函数，全局变量ic_data[32]会被填充
+	// 由于只需要整个汉字中的2个字节
+	colData[0] = getICData(addr+colIdx, 1)[0];
+	colData[1] = getICData(addr+colIdx+16, 1)[0];
+}
 
 // test---------------------------------------------------------------
 // 将整个屏幕所有数据设置成同一个数据(如果传入0xFF就是全部点亮)
