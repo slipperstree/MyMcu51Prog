@@ -1,6 +1,8 @@
 /*************************************************************************************
 【功能】
     驱动16x64 LED点阵屏滚动显示任意指定汉字。
+	指定方法1：修改变量textForShow和showDataSize的值，上电默认循环滚动显示。
+	指定方法2：串口发送文字显示
     由于汉字字库体积巨大（16x16的标准汉字点阵字库需要260KB），单片机的ROM存放不下整个字库。
     想显示任意汉字就必须借助外部储存芯片，本程序采用的是专门的点阵字库芯片。（其实也可使用Flash芯片）
 
@@ -42,6 +44,11 @@
         SCLK   - P2^1
         SI     - P2^2
         SO     - P2^3
+
+【关于定时器、串口的说明】
+	定时器0：未使用（优先级高于串口中断，所以不可用来扫描，否则会影响串口通信）
+	定时器1：作为硬件串口的波特率发生器
+	定时器2：行扫描以及滚动显示控制，中断优先级低于串口，不会影响串口通信
 */
 
 /*头文件*/
@@ -106,12 +113,12 @@ bit isShowing = 0;
 void shiftLeft(void);
 
 // 显示文字设置，注意长度和文字内容要匹配
-//int showDataSize=8*2;
-//uchar code textForShow[] = "测试一下子好不好";
-int showDataSize=972*2;
-uchar code textForShow[] = "《长恨歌》【唐·白居易】汉皇重色思倾国，御宇多年求不得。杨家有女初长成，养在深闺人未识。天生丽质难自弃，一朝选在君王侧。回眸一笑百媚生，六宫粉黛无颜色。春寒赐浴华清池，温泉水滑洗凝脂。侍儿扶起娇无力，始是新承恩泽时。云鬓花颜金步摇，芙蓉帐暖度春宵。春宵苦短日高起，从此君王不早朝。承欢侍宴无闲暇，春从春游夜专夜。后宫佳丽三千人，三千宠爱在一身。金屋妆成娇侍夜，玉楼宴罢醉和春。姊妹弟兄皆列土，可怜光彩生门户。遂令天下父母心，不重生男重生女。骊宫高处入青云，仙乐风飘处处闻。缓歌慢舞凝丝竹，尽日君王看不足。渔阳鼙鼓动地来，惊破霓裳羽衣曲。九重城阙烟尘生，千乘万骑西南行。翠华摇摇行复止，西出都门百余里。六军不发无奈何，宛转蛾眉马前死。花钿委地无人收，翠翘金雀玉搔头。君王掩面救不得，回看血泪相和流。黄埃散漫风萧索，云栈萦纡登剑阁。峨嵋山下少人行，旌旗无光日色薄。蜀江水碧蜀山青，圣主朝朝暮暮情。行宫见月伤心色，夜雨闻铃肠断声。天旋日转回龙驭，到此踌躇不能去。马嵬坡下泥土中，不见玉颜空死处。君臣相顾尽沾衣，东望都门信马归。归来池苑皆依旧，太液芙蓉未央柳。芙蓉如面柳如眉，对此如何不泪垂。春风桃李花开夜，秋雨梧桐叶落时。西宫南内多秋草，落叶满阶红不扫。梨园弟子白发新，椒房阿监青娥老。夕殿萤飞思悄然，孤灯挑尽未成眠。迟迟钟鼓初长夜，耿耿星河欲曙天。鸳鸯瓦冷霜华重，翡翠衾寒谁与共。悠悠生死别经年，魂魄不曾来入梦。临邛道士鸿都客，能以精诚致魂魄。为感君王展转思，遂教方士殷勤觅。排空驭气奔如电，升天入地求之遍。上穷碧落下黄泉，两处茫茫皆不见。忽闻海上有仙山，山在虚无缥渺间。楼阁玲珑五云起，其中绰约多仙子。中有一人字太真，雪肤花貌参差是。金阙西厢叩玉扃，转教小玉报双成。闻到汉家天子使，九华帐里梦魂惊。揽衣推枕起徘回，珠箔银屏逦迤开。云鬓半偏新睡觉，花冠不整下堂来。风吹仙袂飘摇举，犹似霓裳羽衣舞。玉容寂寞泪阑干，梨花一枝春带雨。含情凝睇谢君王，一别音容两渺茫。昭阳殿里恩爱绝，蓬莱宫中日月长。回头下望人寰处，不见长安见尘雾。唯将旧物表深情，钿合金钗寄将去。钗留一股合一扇，钗擘黄金合分钿。但教心似金钿坚，天上人间会相见。临别殷勤重寄词，词中有誓两心知。七月七日长生殿，夜半无人私语时。在天愿作比翼鸟，在地愿为连理枝。天长地久有时尽，此恨绵绵无绝期。";
-//int showDataSize=297*2;
-//uchar code textForShow[] = "我们好像在哪儿见过你记得吗？好像那是一个春天我刚发芽，我走过，没有回头，我记得，我快忘了。我们好像在哪儿见过你记得吗？记得那是一个夏天盛开如花，我唱歌，没有对我，但我记得，可我快忘了。我们好像在哪见过你记得吗？好像那是一个秋天夕阳西下，你美得让我不敢和你说话，你经过我时风起浮动我的发。我们好像在哪见过你记得吗？记得那是一个冬天漫天雪花，我走过，没有回头，我记得，我快忘了。我们好像在哪见过你记得吗？那时你还是个孩子我在窗棂下，我猜着你的名字刻在了墙上，我画了你的摸样对着弯月亮我们好像在哪见过你记得吗？当我们来到今生各自天涯，天涯相望今生面对谁曾想，还能相遇一切就像梦一样。我们好像在哪见过。";
+//int showDataSize=21;
+//uchar code textForShow[] = "测试1全2角3半角混aBc合";
+//int showDataSize=972*2;
+//uchar code textForShow[] = "《长恨歌》【唐·白居易】汉皇重色思倾国，御宇多年求不得。杨家有女初长成，养在深闺人未识。天生丽质难自弃，一朝选在君王侧。回眸一笑百媚生，六宫粉黛无颜色。春寒赐浴华清池，温泉水滑洗凝脂。侍儿扶起娇无力，始是新承恩泽时。云鬓花颜金步摇，芙蓉帐暖度春宵。春宵苦短日高起，从此君王不早朝。承欢侍宴无闲暇，春从春游夜专夜。后宫佳丽三千人，三千宠爱在一身。金屋妆成娇侍夜，玉楼宴罢醉和春。姊妹弟兄皆列土，可怜光彩生门户。遂令天下父母心，不重生男重生女。骊宫高处入青云，仙乐风飘处处闻。缓歌慢舞凝丝竹，尽日君王看不足。渔阳鼙鼓动地来，惊破霓裳羽衣曲。九重城阙烟尘生，千乘万骑西南行。翠华摇摇行复止，西出都门百余里。六军不发无奈何，宛转蛾眉马前死。花钿委地无人收，翠翘金雀玉搔头。君王掩面救不得，回看血泪相和流。黄埃散漫风萧索，云栈萦纡登剑阁。峨嵋山下少人行，旌旗无光日色薄。蜀江水碧蜀山青，圣主朝朝暮暮情。行宫见月伤心色，夜雨闻铃肠断声。天旋日转回龙驭，到此踌躇不能去。马嵬坡下泥土中，不见玉颜空死处。君臣相顾尽沾衣，东望都门信马归。归来池苑皆依旧，太液芙蓉未央柳。芙蓉如面柳如眉，对此如何不泪垂。春风桃李花开夜，秋雨梧桐叶落时。西宫南内多秋草，落叶满阶红不扫。梨园弟子白发新，椒房阿监青娥老。夕殿萤飞思悄然，孤灯挑尽未成眠。迟迟钟鼓初长夜，耿耿星河欲曙天。鸳鸯瓦冷霜华重，翡翠衾寒谁与共。悠悠生死别经年，魂魄不曾来入梦。临邛道士鸿都客，能以精诚致魂魄。为感君王展转思，遂教方士殷勤觅。排空驭气奔如电，升天入地求之遍。上穷碧落下黄泉，两处茫茫皆不见。忽闻海上有仙山，山在虚无缥渺间。楼阁玲珑五云起，其中绰约多仙子。中有一人字太真，雪肤花貌参差是。金阙西厢叩玉扃，转教小玉报双成。闻到汉家天子使，九华帐里梦魂惊。揽衣推枕起徘回，珠箔银屏逦迤开。云鬓半偏新睡觉，花冠不整下堂来。风吹仙袂飘摇举，犹似霓裳羽衣舞。玉容寂寞泪阑干，梨花一枝春带雨。含情凝睇谢君王，一别音容两渺茫。昭阳殿里恩爱绝，蓬莱宫中日月长。回头下望人寰处，不见长安见尘雾。唯将旧物表深情，钿合金钗寄将去。钗留一股合一扇，钗擘黄金合分钿。但教心似金钿坚，天上人间会相见。临别殷勤重寄词，词中有誓两心知。七月七日长生殿，夜半无人私语时。在天愿作比翼鸟，在地愿为连理枝。天长地久有时尽，此恨绵绵无绝期。";
+int showDataSize=297*2;
+uchar code textForShow[] = "我们好像在哪儿见过你记得吗？好像那是一个春天我刚发芽，我走过，没有回头，我记得，我快忘了。我们好像在哪儿见过你记得吗？记得那是一个夏天盛开如花，我唱歌，没有对我，但我记得，可我快忘了。我们好像在哪见过你记得吗？好像那是一个秋天夕阳西下，你美得让我不敢和你说话，你经过我时风起浮动我的发。我们好像在哪见过你记得吗？记得那是一个冬天漫天雪花，我走过，没有回头，我记得，我快忘了。我们好像在哪见过你记得吗？那时你还是个孩子我在窗棂下，我猜着你的名字刻在了墙上，我画了你的摸样对着弯月亮我们好像在哪见过你记得吗？当我们来到今生各自天涯，天涯相望今生面对谁曾想，还能相遇一切就像梦一样。我们好像在哪见过。";
 
 // 不使用字库芯片而使用固定文字时放开这一段，并修改程序里的 bufHZ 为 ziku_table
 // 取模软件，需要指定【阴码+顺向（高位在前）+行列式】的形式
@@ -145,7 +152,9 @@ void readICDataToBuffer(uchar* str);
 // 从芯片取点阵的子函数
 uchar* getICData_ASCII_8x16(uchar ch);
 uchar* getICData_Hanzi_16x16(uchar* hz);
-void getICData_Hanzi_16x16_Col(uchar* hz, uchar colIdx, uchar* colData);
+
+// 从芯片取指定文字指定列的上下两个字节（用于位移）
+void getICData_Col(uchar* str, uchar colIdx, uchar* colData);
 
 // 芯片取到的数据转换成适合模块的数据格式并保存在大buffer中
 void setICDataToBuffer(uchar *pICData, uchar size, uchar pos);
@@ -154,9 +163,8 @@ void setICDataToBuffer(uchar *pICData, uchar size, uchar pos);
 typedef unsigned char BYTE;
 typedef unsigned int WORD;
 
-//#define FOSC 11059200L      //System frequency
-#define BAUD 600           //UART baudrate
-//#define BAUD 115200           //UART baudrate
+#define BAUD 9600           //UART baudrate
+//#define BAUD 1200           //UART baudrate
 
 /*Define UART parity mode*/
 #define NONE_PARITY     0   //None parity
@@ -173,7 +181,8 @@ void UartInit();
 
 bit busy;
 
-uchar serialRcvBuf[10]={0,0,0,0,0,0,0,0,0,0};
+// 串口接受文字缓冲区
+uchar serialRcvBuf[50]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 uchar serialRcvIdx=0;
 
 // 其他定义 ######################################################################################
@@ -181,8 +190,7 @@ uchar serialRcvIdx=0;
 void testSetFullScreenByte(uchar);
 //test
 
-
-
+// 虽然定义了Timer0但是main函数没有启用，目前还用不到，以后如果需要可以利用
 int ttTimer0 = 0;
 void Timer0Init(void)		//30us@32.000MHz@6T
 {
@@ -200,17 +208,24 @@ void Timer0Init(void)		//30us@32.000MHz@6T
 }
 
 int ttTimer2 = 0;
-#define T1MS (65536-FOSC/6/1000)    //FOSC/6的这个6表示下载时指定了6T模式，如果是默认12T则改成12
 void Timer2Init(void)
 {
-	RCAP2L = TL2 = T1MS;            //initial timer2 low byte
-    RCAP2H = TH2 = T1MS >> 8;       //initial timer2 high byte
-    TR2 = 1;                        //timer2 start running
-    ET2 = 1;                        //enable timer2 interrupt
-    EA = 1;                         //open global interrupt switch
+	// 89系列定时器2只有16位自动重载模式
+	T2MOD = 0;				//初始化模式寄存器
+	T2CON = 0;				//初始化控制寄存器
+	RCAP2L = TL2 = 0x0B;	//设置定时初值和重载值(10us@32M@6T)
+	RCAP2H = TH2 = 0xFF;	//设置定时初值和重载值(10us@32M@6T)
+	TR2 = 1;				//定时器2开始计时
+    ET2 = 1;                //enable timer2 interrupt
+    EA = 1;                 //open global interrupt switch
 }
 
-uchar rowIdx=0; // 第几行
+// 行扫描函数（每调用一次扫描一行）
+// 为什么16行的扫描不放在函数里面一次性做掉，是因为希望行扫描之间留有空隙可以做别的工作
+// 放在定时器0的中断函数中定时（很短）执行
+// 速度越快画面越不闪烁，但每次操作时间不可以超过定时间隔
+// 读取字库，更新显示数据的处理必须在定时间隔内完成（如果达不到这么快，至少要在一屏16行数据刚好扫描完时执行，这样看上去相对最稳定（每次在同一个地方拖慢，不至于整体闪烁））
+uchar rowIdx=0; // 当前扫描第几行
 void display(){
 	uchar i;
 	
@@ -229,14 +244,17 @@ void display(){
 	if(rowIdx==16) rowIdx=0;
 }
 
+// 一旦串口接受到文字，则停止滚动显示默认文字，转成显示串口文字模式
+// 这种模式暂时不支持滚动
+bit isShowSerialData = 0;
 void main()
 {
 	// 每次从最右端（nowShowTextPos+8的汉字）开始左移进来
 	nowShowTextPos = -8;
 
-//	UartInit(); //使用Timer1作为波特率发生器
-	Timer0Init();
-//  Timer2Init(); //事实证明，不用2个定时器就可以处理好，关键是精准控制行扫描和左移时间
+	UartInit(); //使用Timer1作为波特率发生器
+//	Timer0Init();
+    Timer2Init();
 	
 	// For test --------------------------------------------------------------------------------
 	//readICDataToBuffer( getICData_Hanzi_16x16("全"), 32, 0);
@@ -246,19 +264,23 @@ void main()
 	//setICDataToBuffer(getICData_ASCII_8x16('A'), 16, 0);
 	//setICDataToBuffer(ic_data_A, 16, 0);
 	// For test --------------------------------------------------------------------------------
-
-	// while (1){
-	// 	display();
-	//  //串口接收到文本显示在画面上 还需要修改	
-	// 	if(serialRcvIdx >= 8){
-	// 		readICDataToBuffer(serialRcvBuf);
-	// 		serialRcvIdx=0;
-	// 	}
-	// }
-
     while(1){
 		//display();
 		//testSetFullScreenByte(0xff);
+
+		//串口接收到文本显示在画面上 还需要修改
+		//每收到8个字节（一屏文字）就刷新画面
+		if(serialRcvIdx >= 8){
+			TR2=0; //暂停扫描不然会资源冲突画面会变得很慢
+			// 切换到串口数据显示模式，停止滚动
+			isShowSerialData=1;
+			// 取串口文字的点阵
+			//readICDataToBuffer("汉汉皇皇");
+			readICDataToBuffer(serialRcvBuf);
+
+			serialRcvIdx=0;
+			TR2=1; //恢复扫描
+		}
 	}
 }
 
@@ -446,7 +468,7 @@ void readICDataToBuffer(uchar* str){
 	
 	// GB2312-80编码的编码范围是高位0xa1－0xfe，低位是 0xa1-0xfe ，
 	// 其中汉字范围为 0xb0a1 和 0xf7fe，如果只是简单地判断汉字，则只要查看高字节是否大于等于0xa1就可以了
-	for (pos=0; pos<10; pos++){
+	for (pos=0; pos<8; pos++){
 		if (str[pos] >= 0x20 && str[pos] <= 0x7E) {
 			// 判定为半角ASCII码，调用ASCII码的取点阵函数并存放在当前的显示位置上
 			setICDataToBuffer(getICData_ASCII_8x16(str[pos]), 16, pos); 
@@ -603,36 +625,11 @@ void HC595_Data_Send(uchar *p, uchar han, uchar offset)
 	Latch_port = 0;	/*锁定HC595数据输出*/
 }
 
+// 当前未使用该中断函数
 void Timer0() interrupt 1
 {
 	// 30us一次
-
-	// 行扫描----------------
-	// 每扫描一次，全局变量rowIdx自加一，一直到15再回到0
-	display();
-
-	// 左移----------------
-	ttTimer0++;
-	// 当行扫描一帧结束时，并且滚动时间间隔到了
-	// 进行左移
-	// 判断rowIdx=0的作用是，左移处理只允许在画面完整的一帧扫描完以后才可以做
-	// 这样可以避免画面闪烁。因为左移处理中需要读取字库芯片等耗时的操作
-	// 如果任意打断画面扫描，整个画面会不规则闪烁
-	// 最理想的是每两行扫描之间的那点时间足够执行完左移操作
-	// 也就是左移花费的时间要尽量少于当前定时器0的中断间隔
-	if ( rowIdx == 0 && ttTimer0 >= SCROLL_SPEED) {
-		ttTimer0 = 0;
-		// 左移1位
-		//EN_port = 1; //off screen
-		shiftLeft();
-		//EN_port = 0; //on screen
-	}
 }
-
-
-
-
-
 
 void UartInit(){
 	#if (PARITYBIT == NONE_PARITY)
@@ -656,19 +653,20 @@ void UartInit(){
 /*----------------------------
 UART interrupt service routine
 ----------------------------*/
-
 void Uart_Isr() interrupt 4 using 1
 {
     if (RI)
     {
         RI = 0;             //Clear receive interrupt flag
-		
+
+SBUF=SBUF;
 		if(SBUF == 0x55){
 			serialRcvIdx=0;
 		} else {
 			serialRcvBuf[serialRcvIdx] = SBUF;
 			serialRcvIdx++;
 		}
+		TR0=1;
     }
     if (TI)
     {
@@ -723,15 +721,36 @@ void SendString(char *s)
 
 void Timer2() interrupt 5
 {
-	// 1ms一次
-	ttTimer2++;
-	
-	if(ttTimer2 >= 100){
-		ttTimer2 = 0;
+	// 10us一次
+
+	// 定时器2的TF2标志位必须手动清零
+	TF2 = 0;
+
+	// 行扫描----------------
+	// 每扫描一次，全局变量rowIdx自加一，一直到15再回到0
+	display();
+
+	// 如果当前是显示串口文字模式则不进行左移
+	if (isShowSerialData == 1) {
+		return;
 	}
 
-	// 定时器2的TF2标志位必须手动清零（定时器0或1硬件自动清零）
-    TF2 = 0;
+	// 左移----------------
+	ttTimer2++;
+	// 当行扫描一帧结束时，并且滚动时间间隔到了
+	// 进行左移
+	// 判断rowIdx=0的作用是，左移处理只允许在画面完整的一帧扫描完以后才可以做
+	// 这样可以避免画面闪烁。因为左移处理中需要读取字库芯片等耗时的操作
+	// 如果任意打断画面扫描，整个画面会不规则闪烁
+	// 最理想的是每两行扫描之间的那点时间足够执行完左移操作
+	// 也就是左移花费的时间要尽量少于当前定时器0的中断间隔
+	if ( rowIdx == 0 && ttTimer2 >= SCROLL_SPEED) {
+		ttTimer2 = 0;
+		// 左移1位
+		//EN_port = 1; //off screen
+		shiftLeft();
+		//EN_port = 0; //on screen
+	}
 }
 
 // 画面左移一位
@@ -740,10 +759,11 @@ void shiftLeft() {
 	uchar idx = 0;
 
 	// 从IC取得右侧将要移入的列数据（上下各一个字节）
-	uchar shiftInColData[2] = {0x00,0x00};
-	getICData_Hanzi_16x16_Col(&textForShow[nowShowTextPos+8], nowShiftOffset, shiftInColData);
+	// 第一个字节用来返回是Ascii码还是汉字，以便移位offset的重置
+	uchar shiftInColData[3] = {0x00,0x00,0x00};
+	getICData_Col(&textForShow[nowShowTextPos+8], nowShiftOffset, shiftInColData);
 
-	// 大Buffer全体左移一位（TODO 本来做缓冲用的第5个汉字不用管了，将来这个汉字的缓冲区也要删掉不用）
+	// 大Buffer全体左移一位
 	for (idx=0; idx<128; idx++){
 		// 先左移1位
 		bufHZ[idx]<<=1;
@@ -754,65 +774,102 @@ void shiftLeft() {
 	// 取到的上下两个纵列字节()的数据的每一位写入大buffer最右侧
 	// 也就是写入B112-B127这16个字节的最低位
 	// <大Buff最右侧数据>
-	// B112   ...bit0 <- shiftInColData[0]的 bit0
+	// B112   ...bit0 <- shiftInColData[1]的 bit0
 	// ...
-	// B119   ...bit0 <- shiftInColData[0]的 bit7
-	// B120   ...bit0 <- shiftInColData[1]的 bit0
+	// B119   ...bit0 <- shiftInColData[1]的 bit7
+	// B120   ...bit0 <- shiftInColData[2]的 bit0
 	// ...
-	// B127   ...bit0 <- shiftInColData[1]的 bit7
+	// B127   ...bit0 <- shiftInColData[2]的 bit7
 	for(idx = 0; idx < 8; idx++)
 	{
 		bufHZ[idx+112] &= 0xFE; // 112-119 清零最低位
 		bufHZ[idx+120] &= 0xFE; // 120-127 清零最低位
 		
-		if ((shiftInColData[0]<<(7-idx) & 0x80) == 0x80 )  {
+		if ((shiftInColData[1]<<(7-idx) & 0x80) == 0x80 )  {
 			bufHZ[idx+112] |= 0x01; // 112-119 最低位置1
 		}
 
-		if ((shiftInColData[1]<<(7-idx) & 0x80) == 0x80 )  {
+		if ((shiftInColData[2]<<(7-idx) & 0x80) == 0x80 )  {
 			bufHZ[idx+120] |= 0x01; // 120-127 最低位置1
 		}
 	}
 
 	// 偏移量加一，通知显示子函数刷新画面
-	if(nowShiftOffset==15){
-		nowShiftOffset=0;
-		nowShowTextPos+=2;  // 一个汉字即2个字节
-		if(nowShowTextPos>=(showDataSize-8)) nowShowTextPos=-8;
+	if(shiftInColData[0] == 0){
+		// 当前移进来的字符是Ascii码8位宽度
+		if(nowShiftOffset==7){
+			nowShiftOffset=0;
+			nowShowTextPos+=1;  // 全部移动完成后，当前显示文字位置向后移动1个字节（一个Ascii即1个字节）
+			if(nowShowTextPos>=(showDataSize-8)) nowShowTextPos=-8;
+		} else {
+			nowShiftOffset++;
+		}
 	} else {
-		nowShiftOffset++;
+		// 当前移进来的字符是汉字16位宽度
+		if(nowShiftOffset==15){
+			nowShiftOffset=0;
+			nowShowTextPos+=2;  // 全部移动完成后，当前显示文字位置向后移动2个字节（一个汉字即2个字节）
+			if(nowShowTextPos>=(showDataSize-8)) nowShowTextPos=-8;
+		} else {
+			nowShiftOffset++;
+		}
 	}
+	
 }
 
-// 取得指定汉字的指定列的点阵数据（两个字节）
-void getICData_Hanzi_16x16_Col(uchar* hz, uchar colIdx, uchar* colData) {
+// 取得指定文字的指定列的点阵数据（两个字节）
+// 返回参数结构：
+//    colData[0] : 返回是否为Asc/汉字标志位。0为Ascii,1为汉字。
+//    colData[1] : 返回指定列 上半部分数据
+//    colData[2] : 返回指定列 下半部分数据
+void getICData_Col(uchar* str, uchar colIdx, uchar* colData)
+{
 	unsigned long hzGBCodeH8, hzGBCodeL8;
 
 	// 先清空目标字节
-	colData[0] = 0x00;
-	colData[1] = 0x00;
-	
-	// 由于后面有地址的计算，所以必须使用可容纳大数的long型作为中间变量，否则做地址运算时会溢出
-	// 直接将uchar型赋值给long型的话，没有赋值到的高位有可能乱掉，所以跟0xFF相与一次，确保只留下uchar部分的数据
-	hzGBCodeH8 = hz[0] & 0xFF;
-	hzGBCodeL8 = hz[1] & 0xFF;
-	
-	// GB2312汉字所在地址的计算公式
-	if(hzGBCodeH8 ==0xA9 && hzGBCodeL8 >=0xA1)
-		addr = (282 + (hzGBCodeL8 - 0xA1 ))*32;
-	else if(hzGBCodeH8 >=0xA1 && hzGBCodeH8 <= 0xA3 && hzGBCodeL8 >=0xA1)
-		addr =( (hzGBCodeH8 - 0xA1) * 94 + (hzGBCodeL8 - 0xA1))*32;
-	else if(hzGBCodeH8 >=0xB0 && hzGBCodeH8 <= 0xF7 && hzGBCodeL8 >=0xA1) {
-		// addr = ((hzGBCodeH8 - 0xB0) * 94 + (hzGBCodeL8 - 0xA1)+ 846)*32;
-		addr = (hzGBCodeH8 - 0xB0) * 94;
-		addr += (hzGBCodeL8 - 0xA1) + 846;
-		addr *= 32;
+	colData[0] = 0x00; //返回是否为Asc/汉字标志位。0为Ascii,1为汉字。 
+	colData[1] = 0x00; //返回指定列 上半部分数据
+	colData[2] = 0x00; //返回指定列 下半部分数据
+
+	// 计算点阵所在地址
+	// GB2312-80编码的编码范围是高位0xa1－0xfe，低位是 0xa1-0xfe ，
+	// 其中汉字范围为 0xb0a1 和 0xf7fe，如果只是简单地判断汉字，则只要查看高字节是否大于等于0xa1就可以了
+	if (str[0] >= 0x20 && str[0] <= 0x7E) {
+		// ASCII字符
+		addr = (str[0]-0x20)*16+0x3b7c0;
+
+		// 只需要指定列的2个字节，分两次取单字节
+		colData[1] = getICData(addr+colIdx, 1)[0];
+		colData[2] = getICData(addr+colIdx+8, 1)[0];
+
+		colData[0] = 0;
+	} else {
+		// 全角汉字
+		// 由于后面有地址的计算，所以必须使用可容纳大数的long型作为中间变量，否则做地址运算时会溢出
+		// 直接将uchar型赋值给long型的话，没有赋值到的高位有可能乱掉，所以跟0xFF相与一次，确保只留下uchar部分的数据
+		hzGBCodeH8 = str[0] & 0xFF;
+		hzGBCodeL8 = str[1] & 0xFF;
+
+		// GB2312汉字所在地址的计算公式
+		if(hzGBCodeH8 ==0xA9 && hzGBCodeL8 >=0xA1)
+			addr = (282 + (hzGBCodeL8 - 0xA1 ))*32;
+		else if(hzGBCodeH8 >=0xA1 && hzGBCodeH8 <= 0xA3 && hzGBCodeL8 >=0xA1)
+			addr =( (hzGBCodeH8 - 0xA1) * 94 + (hzGBCodeL8 - 0xA1))*32;
+		else if(hzGBCodeH8 >=0xB0 && hzGBCodeH8 <= 0xF7 && hzGBCodeL8 >=0xA1) {
+			// addr = ((hzGBCodeH8 - 0xB0) * 94 + (hzGBCodeL8 - 0xA1)+ 846)*32;
+			addr = (hzGBCodeH8 - 0xB0) * 94;
+			addr += (hzGBCodeL8 - 0xA1) + 846;
+			addr *= 32;
+		}
+
+		// 只需要整个汉字指定列的2个字节，分两次取单字节
+		colData[1] = getICData(addr+colIdx, 1)[0];
+		colData[2] = getICData(addr+colIdx+16, 1)[0];
+
+		colData[0] = 1;
 	}
+
 	
-	// 调用一次取数据（取整个汉字的数据）的函数，全局变量ic_data[32]会被填充
-	// 由于只需要整个汉字中的2个字节
-	colData[0] = getICData(addr+colIdx, 1)[0];
-	colData[1] = getICData(addr+colIdx+16, 1)[0];
 }
 
 // test---------------------------------------------------------------
