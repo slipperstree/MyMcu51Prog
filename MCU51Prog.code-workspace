@@ -2,12 +2,19 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "/Users/chenling/Documents/我的坚果云/MCU/NuvotonMCU/N76E616_SampleCode_Keil_C51_V1.0.1"
+		},
+		{
+			"path": "/Users/chenling/Documents/我的坚果云/MCU/NuvotonMCU/N76E003_BSP_Keil_C51_V1.0.6"
 		}
 	],
 	"settings": {
 		"files.associations": {
 			"*.lua": "lua",
-			"stc89c52.h": "c"
+			"stc89c52.h": "c",
+			"ht1621b.h": "c"
 		}
 	}
 }

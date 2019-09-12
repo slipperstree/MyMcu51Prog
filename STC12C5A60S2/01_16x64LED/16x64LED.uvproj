@@ -286,7 +286,7 @@
             <Fuzzy>3</Fuzzy>
             <Optimize>8</Optimize>
             <WarningLevel>2</WarningLevel>
-            <SizeSpeed>1</SizeSpeed>
+            <SizeSpeed>0</SizeSpeed>
             <ObjectExtend>1</ObjectExtend>
             <ACallAJmp>0</ACallAJmp>
             <InterruptVectorAddress>0</InterruptVectorAddress>
@@ -352,9 +352,9 @@
               <FilePath>.\STC12C5A60S2.h</FilePath>
             </File>
             <File>
-              <FileName>16x64LED_For89C52.c</FileName>
+              <FileName>16x64LED_ForNewPCB.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\16x64LED_For89C52.c</FilePath>
+              <FilePath>.\16x64LED_ForNewPCB.c</FilePath>
             </File>
           </Files>
         </Group>

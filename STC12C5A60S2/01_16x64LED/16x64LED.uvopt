@@ -195,7 +195,7 @@
     <cbSel>0</cbSel>
     <File>
       <GroupNumber>1</GroupNumber>
-      <FileNumber>2</FileNumber>
+      <FileNumber>1</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -209,7 +209,7 @@
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
-      <FileNumber>0</FileNumber>
+      <FileNumber>2</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -218,36 +218,10 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>.\16x64LED_For89C52.c</PathWithFileName>
-      <FilenameWithoutPath>16x64LED_For89C52.c</FilenameWithoutPath>
+      <PathWithFileName>.\16x64LED_ForNewPCB.c</PathWithFileName>
+      <FilenameWithoutPath>16x64LED_ForNewPCB.c</FilenameWithoutPath>
     </File>
   </Group>
-
-  <AlienFiles>
-    <PathWithFilename>H:\我的坚果云\MCU\STC51MCU\STC12C5A60S2\01_16X64LED\16x64LED.c</PathWithFilename>
-    <TopLine>76</TopLine>
-    <CurrentLine>91</CurrentLine>
-    <Constant>0</Constant>
-    <WindowPosition>
-      <length>0</length>
-      <flags>0</flags>
-      <showCmd>0</showCmd>
-      <MinPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MinPosition>
-      <MaxPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MaxPosition>
-      <NormalPosition>
-        <Top>0</Top>
-        <Left>0</Left>
-        <Right>0</Right>
-        <Bottom>0</Bottom>
-      </NormalPosition>
-    </WindowPosition>
-  </AlienFiles>
 
   <WinLayout>
     <sActiveDebugView>Default</sActiveDebugView>
@@ -1584,22 +1558,5 @@
       </Window>
     </View>
   </WinLayout>
-
-  <MDIGroups>
-    <Orientation>1</Orientation>
-    <ActiveMDIGroup>0</ActiveMDIGroup>
-    <MDIGroup>
-      <Size>100</Size>
-      <ActiveTab>0</ActiveTab>
-      <Documents>
-        <Doc>
-          <Name>H:\我的坚果云\MCU\STC51MCU\STC12C5A60S2\01_16X64LED\16x64LED.c</Name>
-          <ColumnNumber>105</ColumnNumber>
-          <TopLine>76</TopLine>
-          <CurrentLine>91</CurrentLine>
-        </Doc>
-      </Documents>
-    </MDIGroup>
-  </MDIGroups>
 
 </ProjectOpt>
