@@ -197,11 +197,13 @@ void Get_SYS_Value()
     SEC_SCAN_MODE=ReadTime(SecMod_ReADDR);    //读取秒显示模式
     get_alarm_data();            //读取闹钟信息
 }
+
 //=========================================================================
 //        读时间
 //out:    nian,yue,ri,shi,fen,miao
 //Author: Danker3
 //Date:   2012.12.17
+//注意，本函数已经考虑过DS1302读取的是BCD码的问题，已经将BCD码转换成了十进制数字了
 //=========================================================================
 void GetTime()
 {
@@ -293,4 +295,61 @@ void GetTime()
         default:i=0;break;
     }
 //    if((++i)>=6)i=0;
+}
+
+// 以下函数考虑了ds1302写入时需要写入BCD码，自动转换成BCD码再写入
+// DS1302芯片写入时间的格式为BDC码，不能直接写原来的数字
+// 要将数字的十位放在高4位，个位放在低4位
+// 比如19这个数，要送十六进制数0x19，不能直接送十进制数19
+// 方法是：
+//      将19整除10的商，也就是十位数的1，左移4位移动到高4位上去(0x10)
+//      再计算19除以10的余数，也就是个位数的9(0x09)
+//      最后将两个数相或就可以了 0x10|0x09=0x19
+// 目前这个时钟的硬件没有显示星期的功能，所以星期部分的数据丢弃不用
+
+// 十进制数转BCD码
+uchar dec2Bcd(uchar hexData){
+	return (hexData/10)<<4|(hexData%10);
+}
+
+/*
+ 传入十进制数据，自动转成BCD并写入DS1302
+ */
+void WriteTime_Sec(uchar nonBcdData) {
+	WriteTime(0x80, dec2Bcd(nonBcdData));	//秒
+}
+
+/*
+ 传入十进制数据，自动转成BCD并写入DS1302
+ */
+void WriteTime_Min(uchar nonBcdData) {
+	WriteTime(0x82, dec2Bcd(nonBcdData));  	//分
+}
+
+/*
+ 传入十进制数据，自动转成BCD并写入DS1302
+ */
+void WriteTime_Hour(uchar nonBcdData) {
+	WriteTime(0x84, dec2Bcd(nonBcdData));  //时
+}
+
+/*
+ 传入十进制数据，自动转成BCD并写入DS1302
+ */
+void WriteTime_Day(uchar nonBcdData) {
+	WriteTime(0x86, dec2Bcd(nonBcdData));  //日
+}
+
+/*
+ 传入十进制数据，自动转成BCD并写入DS1302
+ */
+void WriteTime_Month(uchar nonBcdData) {
+	WriteTime(0x88, dec2Bcd(nonBcdData));  //月
+}
+
+/*
+ 传入十进制数据，自动转成BCD并写入DS1302
+ */
+void WriteTime_Year(uchar nonBcdData) {
+	WriteTime(0x8c, dec2Bcd(nonBcdData));  //年
 }

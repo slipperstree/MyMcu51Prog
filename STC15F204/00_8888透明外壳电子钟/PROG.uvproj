@@ -351,11 +351,6 @@
               <FileType>1</FileType>
               <FilePath>.\main.c</FilePath>
             </File>
-            <File>
-              <FileName>STC15104E.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\STC15104E.h</FilePath>
-            </File>
           </Files>
         </Group>
       </Groups>

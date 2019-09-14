@@ -1,25 +1,33 @@
 /***************************************************/
-
-/* 测试单片机 STC15F100系列单片机 流水灯测试程序 */ 
-
+/* 电子钟程序
+/* 实时时钟采用DS1302芯片
+/* 可以用串口进行校时（以便今后增加ESP8266模块进行网络校时）
 /***************************************************/     
-#include<STC15104E.h>
-#include<absacc.h>
-#include<intrins.h>
-#include<string.h>
-#include<stdlib.h>
+#include <absacc.h>
+#include <intrins.h>
+#include <string.h>
+#include <stdlib.h>
 
+#include "STC15104E.h"
 #include "DS1302.h"
 #include "display.h"
+#include "uart.h"
 
 #define uchar unsigned char
 #define uint unsigned int
 
-sbit p30 = P3^0;         //
-sbit p31 = P3^1;         //
+int tt_getTime = 0;
+int tt_refresh = 0;
 
-int tt = 0;
-						 
+void delay(unsigned int n)
+{
+	unsigned int x,y;
+	for(x=n;x>0;x--)
+	{
+		for(y=110;y>0;y--);	
+	}
+}
+
 /*************定时器0初始化程序***************/
 void timer0_init()
 {
@@ -35,39 +43,67 @@ void timer0_init()
 
 main()
 {
-	timer0_init();
-	DS1302_init();
+	uchar nowPos = 1;
 
-	//测试用设置时间
-	// WriteTime(0x80,( 0 /10)<<4|( 0 %10));	 //秒
-	// WriteTime(0x82,( 5 /10)<<4|( 5 %10));  //分
-    // WriteTime(0x84,( 15 /10)<<4|( 15 %10));  //时
-	// WriteTime(0x86,( 14 /10)<<4|( 14 %10));  //日
-	// WriteTime(0x88,( 9 /10)<<4|( 9 %10));  //月
-	// WriteTime(0x8c,( 19 /10)<<4|( 19 %10));  //年
+	//timer0_init();
+	DS1302_init();
+	uart_init();
+
+	// 测试用设置时间(2019/09/14 15:00:00)
+	// WriteTime_Sec(0);	//秒
+	// WriteTime_Min(0);  	//分
+    // WriteTime_Hour(15);  //时
+	// WriteTime_Day(14);  	//日
+	// WriteTime_Month(9);  //月
+	// WriteTime_Month(19);  //年
 
 	while(1){
+		//这个延时太长会导致软串口丢数据
+		delay(1);
 
-		delay_ms(300);
+		//软串口服务程序
+		Soft_Uart_Isr();
 
-		GetTime();          //获取当前时间
-		updateDisplay();	//更新显示用的数据（该处仅仅更新内存里的数据，真正刷新画面是再定时器函数里做的）
+		//获取当前时间
+		tt_getTime++;
+		if (tt_getTime >= 300)
+		{
+			tt_getTime = 0;
+
+			GetTime();
+
+			//根据上面的GetTime取到的数据(定义再DS302.h里面的全局变量shi fen miao nian yue ri等)更新显示用的数据
+			//该处仅仅更新内存里的数据(定义在display.h里的 d1 d2 d3 d4)，真正刷新画面是在后面的showPosition函数里做的）
+			updateDisplay();
+		}
+
+		// 刷新画面 ----------------
+		tt_refresh++;
+		if (tt_refresh >= 10)
+		{
+			tt_refresh = 0;
+			
+			nowPos++;
+			if (nowPos==5)
+			{
+				nowPos=1;
+			}
+			showPosition(nowPos);
+		}
 	}
 }
 
-uchar nowPos = 1;
-void Timer0() interrupt 1  //调用定时器0
+//void Timer0() interrupt 1  //调用定时器0
+void Timer0()
 {
 	TH0=0xfe;    //定时10ms中断一次
 	TL0=0x0c;	 //500us
 
-	nowPos++;
-	if (nowPos==5)
-	{
-		nowPos=1;
-	}
+	// nowPos++;
+	// if (nowPos==5)
+	// {
+	// 	nowPos=1;
+	// }
 
-	showPosition(nowPos);
+	// showPosition(nowPos);
 }
-
-// ************ DS1302 ************************************************************
