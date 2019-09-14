@@ -75,7 +75,7 @@ uchar strBuff[32+1];
 uchar rcvCharCnt = 0;
 
 void rcvCharProc(uchar rcvChar);
-void doMessage();
+void doMessage(uchar);
 void doCommand(uchar);
 
 void uart_init()
@@ -235,10 +235,16 @@ void uart_init()
 
 void rcvCharProc(uchar rcvChar) {
 	// 这里定义了一个消息的协议：
-	// 每条有效的消息为4个字节:
-	// 三个字节的消息头[S] + 一个字节的消息体    (如 [S]1)
-	// 以后允许多字节消息体的时候考虑加上消息尾[E]
-	// 目前，形如 [S][S]8 这种误码，并不会解析成消息"8"，而是会解析成消息"["，后面的 "S]8" 会被丢弃 
+	// 消息分<命令消息>和<文本消息>两种。
+	// <命令消息>
+	// 		三个字节的消息头[S] + 一个字节的消息体(内容任意)    (如 [S]1)
+	//		接收到命令消息后，会调用doCommand函数，并将消息体的1个字节作为参数传给该函数。
+	//		补充：形如 [S][S]8 这种误码，并不会解析成消息"8"，而是会解析成消息"["，后面的 "S]8" 会被丢弃 
+	// <文本消息> (多字节消息，也可用于发送数据)
+	//		三个字节的消息头[T] + 最多32个字节的消息体(内容任意)+ 一个字节的消息结束标识@
+	//		接收到文本消息时在遇到结束符@之前会将接受到的char存入strBuff缓冲区。
+	//		一直到遇到结束符@ 或者 达到缓冲区大小上限32位 会停止接收并调用doMessage函数，并将接收到的消息体的字节个数作为参数传给该函数。
+	//      在该函数内可根据需要读取缓冲区的内容。
 
 	if (uartStatus == UART_STS_CHK_HEAD) {
 		// 每接收到一个字节首先检查是不是消息头的前导字符 [
@@ -288,24 +294,29 @@ void rcvCharProc(uchar rcvChar) {
 			case UART_HEAD_TXT:
 				// 文字消息模式下，接收到的字符存入缓冲区，接收完成后做处理
 				// 注意，这里不可以收到一个就向显示设备发送一个,显示部分比较耗时，会导致部分串口数据丢失
-				// 循环往复直到32个文字接收满了为止(1602最大显示32个英数字)
+				// 循环往复直到32个文字接收满了为止
 				// 但有可能发送的文字书小于32，但接受方没法知道发送文字的总数（通过制定协议可以解决），
 				// 故，本程序中满足下列2个条件之一就停止接收，将已接收到的内容显示出去并回到检查head的状态
 				// 1 - 接收到结束位@
 				// 2 - 已接受满32个字节，强制停止接收
-				if ( rcvChar == '@' )
+				if ( rcvChar == '@' || rcvCharCnt >= 32 )
 				{
 					// 收到结束位，停止接收，开始处理接收完的消息  @本身不放入消息缓冲区
-					doMessage();
-					break;
+					// 末尾加上字符串的结束符号
+    				strBuff[rcvCharCnt] = 0x00;
+
+					doMessage(rcvCharCnt);
+
+					// 字符数清0
+					rcvCharCnt = 0;
+
+					// 切回接收新消息模式
+					checkHead_len = 0;
+					uartStatus = UART_STS_CHK_HEAD;
+
 				} else {
 					// 不是结束位，继续将收到的字节放入缓冲区
 					strBuff[rcvCharCnt++] = rcvChar;
-				}
-
-				// 已经接受满了32个字节，即使后面还有数据也不再接受，开始处理接收完的消息
-				if (rcvCharCnt >= 32 ) {
-					doMessage();
 				}
 				break;
 			default:
@@ -314,7 +325,7 @@ void rcvCharProc(uchar rcvChar) {
 	}
 }
 
-void doCommand(unsigned char cmd){
+void doCommand(uchar cmd){
     // 这里做业务判断处理
     switch(cmd)
     {
@@ -325,28 +336,26 @@ void doCommand(unsigned char cmd){
     }
 }
 
-void doMessage(){
+void doMessage(uchar rcvCnt){
 	
 	unsigned char i=0;
 	unsigned char chkFlg=0;
 	char YY, MM, DD, W, hh, mm, ss;
 
-    // 末尾加上字符串的结束符号
-    strBuff[rcvCharCnt] = 0x00;
     // Do anything u want to do here -------
     // 本程序预想的收到的校时消息格式
     // YYYYMMDDWhhmmss
     // 共15个字节 年4 月2 日2 星期1 小时2 分钟2 秒2
 	
     // 首先检查收到的字符串长度是否等于15
-    if (rcvCharCnt != 15)
+    if (rcvCnt != 15)
     {
     	// 不等于15 表示消息有误，丢弃不处理
 
     } else {
     	// 检查各位是否都是数字，如果任何一位不是数字，表示消息有误，丢弃不处理
     	chkFlg = 0;
-    	for (i = 0; i < rcvCharCnt; ++i)
+    	for (i = 0; i < rcvCnt; ++i)
 	    {
 	    	if (strBuff[i] < 0x30 || strBuff[i] > 0x39)
 	    	{
@@ -389,14 +398,5 @@ void doMessage(){
 	    	}
 	    }
     }
-
-    // Do anything u want to do here --------------
-
-    // 字符数清0
-    rcvCharCnt = 0;
-
-    // 切回接收新消息模式
-    checkHead_len = 0;
-    uartStatus = UART_STS_CHK_HEAD;
 }
 //***************************20180325 串口校时**********************************************************
