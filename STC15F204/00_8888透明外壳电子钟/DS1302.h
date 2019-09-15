@@ -1,6 +1,3 @@
-
-#define DS1302_DATA P1
-
 #define uchar unsigned char
 #define uint unsigned int
 
@@ -205,7 +202,7 @@ void Get_SYS_Value()
 //Date:   2012.12.17
 //注意，本函数已经考虑过DS1302读取的是BCD码的问题，已经将BCD码转换成了十进制数字了
 //=========================================================================
-void GetTime()
+void DS1302_GetTime()
 {
     static unsigned char i=0,temp1;
     unsigned char time_H,time_L,temp;

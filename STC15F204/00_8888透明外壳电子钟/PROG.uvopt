@@ -168,14 +168,14 @@
     <cbSel>0</cbSel>
     <File>
       <GroupNumber>1</GroupNumber>
-      <FileNumber>0</FileNumber>
+      <FileNumber>1</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>32</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>41</TopLine>
-      <CurrentLine>47</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\main.c</PathWithFileName>
       <FilenameWithoutPath>main.c</FilenameWithoutPath>
@@ -183,9 +183,9 @@
   </Group>
 
   <AlienFiles>
-    <PathWithFilename>M:\STC51MCU\STC15F204\00_8888透明外壳电子钟\DS1302.h</PathWithFilename>
-    <TopLine>129</TopLine>
-    <CurrentLine>144</CurrentLine>
+    <PathWithFilename>M:\STC51MCU\STC15F204\00_8888透明外壳电子钟\uart.h</PathWithFilename>
+    <TopLine>123</TopLine>
+    <CurrentLine>132</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -235,35 +235,9 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>M:\STC51MCU\STC15F204\00_8888透明外壳电子钟\uart.h</PathWithFilename>
-    <TopLine>117</TopLine>
-    <CurrentLine>132</CurrentLine>
-    <Constant>0</Constant>
-    <WindowPosition>
-      <length>0</length>
-      <flags>0</flags>
-      <showCmd>0</showCmd>
-      <MinPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MinPosition>
-      <MaxPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MaxPosition>
-      <NormalPosition>
-        <Top>0</Top>
-        <Left>0</Left>
-        <Right>0</Right>
-        <Bottom>0</Bottom>
-      </NormalPosition>
-    </WindowPosition>
-  </AlienFiles>
-
-  <AlienFiles>
-    <PathWithFilename>M:\STC51MCU\STC15F204\00_8888透明外壳电子钟\aaa.c</PathWithFilename>
-    <TopLine>159</TopLine>
-    <CurrentLine>159</CurrentLine>
+    <PathWithFilename>M:\STC51MCU\STC15F204\00_8888透明外壳电子钟\DS1302.h</PathWithFilename>
+    <TopLine>135</TopLine>
+    <CurrentLine>144</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1627,7 +1601,7 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>4</ActiveTab>
+      <ActiveTab>0</ActiveTab>
       <Documents>
         <Doc>
           <Name>.\main.c</Name>
@@ -1638,7 +1612,7 @@
         <Doc>
           <Name>DS1302.H</Name>
           <ColumnNumber>0</ColumnNumber>
-          <TopLine>129</TopLine>
+          <TopLine>135</TopLine>
           <CurrentLine>144</CurrentLine>
         </Doc>
         <Doc>
@@ -1650,14 +1624,8 @@
         <Doc>
           <Name>UART.H</Name>
           <ColumnNumber>0</ColumnNumber>
-          <TopLine>117</TopLine>
+          <TopLine>123</TopLine>
           <CurrentLine>132</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>M:\STC51MCU\STC15F204\00_8888透明外壳电子钟\aaa.c</Name>
-          <ColumnNumber>17</ColumnNumber>
-          <TopLine>159</TopLine>
-          <CurrentLine>159</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>

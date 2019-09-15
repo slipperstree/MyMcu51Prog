@@ -50,8 +50,9 @@
 
 	void UART_INIT();
 
+	#define SEND_BUFF_SIZE  32
+	idata uchar sendBuf[SEND_BUFF_SIZE];
 	BYTE t, r;
-	BYTE buf[16];
 #endif
 
 uchar rcvChar;
@@ -70,7 +71,8 @@ uchar checkFoot_len = 0;
 uchar uartHead = 0x00;
 
 // 32个ascii，加1是用来保存字符串结束符号'\0' (0x00)用的
-uchar strBuff[32+1];
+#define RCV_BUFF_SIZE 32
+uchar strBuff[RCV_BUFF_SIZE+1];
 // 已经接收到的字符数，用于检测是否超过范围
 uchar rcvCharCnt = 0;
 
@@ -78,7 +80,7 @@ void rcvCharProc(uchar rcvChar);
 void doMessage(uchar);
 void doCommand(uchar);
 
-void uart_init()
+void UART_init()
 {
 	#if (UART_TYPE == HARDWARE_UART)
 		#if (PARITYBIT == NONE_PARITY)
@@ -154,25 +156,44 @@ void uart_init()
 	/*********************************************************
 		串行软服务函数（需要在main函数里循环调用）
 	*********************************************************/
-	void Soft_Uart_Isr()
+	void UART_SoftUartIsr()
 	{
 		if (REND)
         {
-            //buf[r++ & 0x0f] = RBUF;
-
 			rcvCharProc(RBUF);
 			
 			REND = 0;
         }
         if (TEND)
         {
-            if (t != r)
-            {
-                TEND = 0;
-                TBUF = buf[t++ & 0x0f];
-                TING = 1;
-            }
+			if (r != t)
+			{
+				TEND = 0;
+				TBUF = sendBuf[t++ & 0x1f];
+				TING = 1;
+				// if (t >= SEND_BUFF_SIZE || buf[t] == 0x00)
+				// {
+				// 	// 如果到达缓冲区域上限或者到达字符串的尾部0x00则不再继续发送，并将t计数器归零
+				// 	t = 0;
+				// } else {
+				// 	// 通知定时器0发送下一个字符
+				// 	TING = 1;
+				// }
+			}
         }
+	}
+
+	void SendData(BYTE dat)
+	{
+		sendBuf[r++ & 0x1f] = dat;
+	}
+
+	void UART_SendString(uchar *s)
+	{
+		while (*s)              //Check the end of the string
+		{
+			SendData(*s++);     //Send current char and increment string ptr
+		}
 	}
 
 	// 定时器0 模拟串口服务子函数
@@ -299,7 +320,7 @@ void rcvCharProc(uchar rcvChar) {
 				// 故，本程序中满足下列2个条件之一就停止接收，将已接收到的内容显示出去并回到检查head的状态
 				// 1 - 接收到结束位@
 				// 2 - 已接受满32个字节，强制停止接收
-				if ( rcvChar == '@' || rcvCharCnt >= 32 )
+				if ( rcvChar == '@' || rcvCharCnt >= RCV_BUFF_SIZE )
 				{
 					// 收到结束位，停止接收，开始处理接收完的消息  @本身不放入消息缓冲区
 					// 末尾加上字符串的结束符号
@@ -353,6 +374,9 @@ void doMessage(uchar rcvCnt){
     // YYYYMMDDWhhmmss
     // 共15个字节 年4 月2 日2 星期1 小时2 分钟2 秒2
 	
+	// 测试用串口返回接受到的消息
+	UART_SendString(strBuff);
+
     // 首先检查收到的字符串长度是否等于15
     if (rcvCnt != 15)
     {

@@ -23,8 +23,10 @@ uchar code digit124[17]={~0x3f,~0x06,~0x5b,~0x4f,~0x66,~0x6d,~0x7d,~0x07,~0x7f,~
 //第3位数码管在硬件上是倒过来接的，数字显示code不一样，要改
 uchar code digit3[17]={~0x3f,~0x30,~0x5b,~0x79,~0x74,~0x6d,~0x6f,~0x38,~0x7f,~0x7d, // 0-9
 							~0x77,~0x7c,~0x39,~0x5e,~0x79,~0x71}; // 0-F(wrong)
+//数码管动态刷新当前位
+uchar nowPos = 1;
 
-int digitForShow;
+//数码管各位上的显示内容
 uchar d1 = 0;
 uchar d2 = 0;
 uchar d3 = 0;
@@ -61,11 +63,21 @@ void showPosition(uchar pos){
 	}
 }
 
-void updateDisplay() {
-	digitForShow = miao;
+// 刷新显示用的内容，需要在main循环中调用
+void DISPLAY_updateDisplay() {
 		
 	d1 = shi % 100 / 10;
 	d2 = shi % 10;			// 最后的|0x80是为了显示dp
 	d3 = fen % 100 / 10;	// 最后的|0x80是为了显示dp
 	d4 = fen % 10;
+}
+
+// 刷新显示，需要在main循环中调用
+void DISPLAY_refreshDisplay() {
+	nowPos++;
+	if (nowPos==5)
+	{
+		nowPos=1;
+	}
+	showPosition(nowPos);
 }

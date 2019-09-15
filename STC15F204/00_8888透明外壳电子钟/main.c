@@ -47,7 +47,7 @@ main()
 
 	//timer0_init();
 	DS1302_init();
-	uart_init();
+	UART_init();
 
 	// 测试用设置时间(2019/09/14 15:00:00)
 	// WriteTime_Sec(0);	//秒
@@ -62,7 +62,7 @@ main()
 		delay(1);
 
 		//软串口服务程序
-		Soft_Uart_Isr();
+		UART_SoftUartIsr();
 
 		//获取当前时间
 		tt_getTime++;
@@ -70,11 +70,11 @@ main()
 		{
 			tt_getTime = 0;
 
-			GetTime();
+			DS1302_GetTime();
 
 			//根据上面的GetTime取到的数据(定义再DS302.h里面的全局变量shi fen miao nian yue ri等)更新显示用的数据
 			//该处仅仅更新内存里的数据(定义在display.h里的 d1 d2 d3 d4)，真正刷新画面是在后面的showPosition函数里做的）
-			updateDisplay();
+			DISPLAY_updateDisplay();
 		}
 
 		// 刷新画面 ----------------
@@ -82,13 +82,10 @@ main()
 		if (tt_refresh >= 10)
 		{
 			tt_refresh = 0;
-			
-			nowPos++;
-			if (nowPos==5)
-			{
-				nowPos=1;
-			}
-			showPosition(nowPos);
+
+			//时间也取了，用来显示的内容也更新完了，这里开始刷新画面
+			//具体刷新的逻辑由display.h的下列接口函数来完成，用户可自行适配不同的显示模块，比如1602，LCD等
+			DISPLAY_refreshDisplay();
 		}
 	}
 }
