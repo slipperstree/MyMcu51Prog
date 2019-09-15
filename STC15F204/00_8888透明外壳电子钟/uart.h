@@ -51,7 +51,10 @@
 	void UART_INIT();
 
 	#define SEND_BUFF_SIZE  32
-	idata uchar sendBuf[SEND_BUFF_SIZE];
+	// idata : 一般的变量(data，隐式)只能访问片内RAM的低128字节内存超过128个字节
+	// 超过128字节就不允许定义一般的变量而需要显式使用idata后就可以访问片内RAM高128个字节了
+	// 写这个程序时使用的单片机只有片内的256字节没有外部RAM，所以不可以使用xdata，只能使用idata
+	idata uchar sendBuf[SEND_BUFF_SIZE];  
 	BYTE t, r;
 #endif
 
