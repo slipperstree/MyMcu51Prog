@@ -1,5 +1,6 @@
-#define uchar unsigned char
-#define uint unsigned int
+#include "../header/uart.h"
+#include "../header/ds1302.h"
+#include "../header/common.h"
 
 #define FOSC 11059200L      //System frequency
 #define BAUD 9600           //UART baudrate
@@ -34,8 +35,12 @@
 	//#define BAUD_TL  0xFF40                  //19200bps @ 11.0592MHz
 	//#define BAUD_TL  0xFFA0                  //38400bps @ 11.0592MHz
 
-	sbit RXB = P3^0;                        //define UART TX/RX port
-	sbit TXB = P3^1;
+	//define UART TX/RX port
+	//本制作的硬件上P30和P31被两个按钮占用了，为了避免冲突，软串口必须换成别的IO口
+	//sbit RXB = P3^0;
+	//sbit TXB = P3^1;
+	sbit RXB = P3^6;
+	sbit TXB = P3^7;
 
 	typedef bit BOOL;
 	typedef unsigned char BYTE;
@@ -47,8 +52,6 @@
 	BYTE TBIT,RBIT;
 	BOOL TING,RING;
 	BOOL TEND,REND;
-
-	void UART_INIT();
 
 	#define SEND_BUFF_SIZE  32
 	// idata : 一般的变量(data，隐式)只能访问片内RAM的低128字节内存超过128个字节
@@ -147,14 +150,18 @@ void UART_init()
 		{
 			rcvChar = SBUF;	//从串口缓冲区取得数据
 			RI = 0;		//清除串行接受标志位
-			
-			SBUF = rcvChar;//打印给串口调试用
 
 			rcvCharProc(rcvChar);
 		}
 
 		ES = 1;			//恢复串口中断
 	}
+
+	void UART_SendString(uchar *s)
+	{
+		//TODO
+	}
+
 #elif (UART_TYPE == SOFTWARE_UART)
 	/*********************************************************
 		串行软服务函数（需要在main函数里循环调用）
@@ -420,12 +427,12 @@ void doMessage(uchar rcvCnt){
 	    		// 日期时间有误，丢弃
 	    	} else {
 				// 日期时间格式正确，写入时钟芯片，完成校时
-				WriteTime_Sec(ss);
-				WriteTime_Min(mm);
-				WriteTime_Hour(hh);
-				WriteTime_Day(DD);
-				WriteTime_Month(MM);
-				WriteTime_Year(YY);
+				DS1302_WriteTime_Sec(ss);
+				DS1302_WriteTime_Min(mm);
+				DS1302_WriteTime_Hour(hh);
+				DS1302_WriteTime_Day(DD);
+				DS1302_WriteTime_Month(MM);
+				DS1302_WriteTime_Year(YY);
 
                 //SBUF = '#'; // 调试用，看到串口返回感叹号表示校时完成
 	    	}

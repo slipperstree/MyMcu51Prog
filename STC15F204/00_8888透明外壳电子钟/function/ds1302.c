@@ -1,5 +1,5 @@
-#define uchar unsigned char
-#define uint unsigned int
+#include "../header/ds1302.h"
+#include "../header/common.h"
 
 sbit	SCLK_DS1302=P1^2;
 sbit	RST_DS1302=P1^0;
@@ -22,15 +22,6 @@ unsigned char  SEC_SCAN_MODE = 0;            //秒钟显示模式
 unsigned char alarm_shi;alarm_fen;
 unsigned char nian,yue,ri,shi,fen,miao;
 unsigned char alarm_shi;alarm_fen;
-
-void delay_ms(unsigned int n)
-{
-	unsigned int x,y;
-	for(x=n;x>0;x--)
-	{
-		for(y=110;y>0;y--);	
-	}
-}
 
 /************************DS1302**********************/
 void SendByte(unsigned char sdate)		  //单片机发送一位数据 
@@ -198,11 +189,11 @@ void Get_SYS_Value()
 //=========================================================================
 //        读时间
 //out:    nian,yue,ri,shi,fen,miao
-//Author: Danker3
+//Author: ChenLing
 //Date:   2012.12.17
 //注意，本函数已经考虑过DS1302读取的是BCD码的问题，已经将BCD码转换成了十进制数字了
 //=========================================================================
-void DS1302_GetTime()
+void DS1302_GetTimeFromDS1302()
 {
     static unsigned char i=0,temp1;
     unsigned char time_H,time_L,temp;
@@ -312,41 +303,57 @@ uchar dec2Bcd(uchar hexData){
 /*
  传入十进制数据，自动转成BCD并写入DS1302
  */
-void WriteTime_Sec(uchar nonBcdData) {
+void DS1302_WriteTime_Sec(uchar nonBcdData) {
 	WriteTime(0x80, dec2Bcd(nonBcdData));	//秒
 }
 
 /*
  传入十进制数据，自动转成BCD并写入DS1302
  */
-void WriteTime_Min(uchar nonBcdData) {
+void DS1302_WriteTime_Min(uchar nonBcdData) {
 	WriteTime(0x82, dec2Bcd(nonBcdData));  	//分
 }
 
 /*
  传入十进制数据，自动转成BCD并写入DS1302
  */
-void WriteTime_Hour(uchar nonBcdData) {
+void DS1302_WriteTime_Hour(uchar nonBcdData) {
 	WriteTime(0x84, dec2Bcd(nonBcdData));  //时
 }
 
 /*
  传入十进制数据，自动转成BCD并写入DS1302
  */
-void WriteTime_Day(uchar nonBcdData) {
+void DS1302_WriteTime_Day(uchar nonBcdData) {
 	WriteTime(0x86, dec2Bcd(nonBcdData));  //日
 }
 
 /*
  传入十进制数据，自动转成BCD并写入DS1302
  */
-void WriteTime_Month(uchar nonBcdData) {
+void DS1302_WriteTime_Month(uchar nonBcdData) {
 	WriteTime(0x88, dec2Bcd(nonBcdData));  //月
 }
 
 /*
  传入十进制数据，自动转成BCD并写入DS1302
  */
-void WriteTime_Year(uchar nonBcdData) {
+void DS1302_WriteTime_Year(uchar nonBcdData) {
 	WriteTime(0x8c, dec2Bcd(nonBcdData));  //年
+}
+
+uchar DS1302_GetMonth(){
+	return yue;
+}
+
+uchar DS1302_GetDay(){
+	return ri;
+}
+
+uchar DS1302_GetHour(){
+	return shi;
+}
+
+uchar DS1302_GetMinute(){
+	return fen;
 }

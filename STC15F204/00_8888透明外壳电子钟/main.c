@@ -8,38 +8,28 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "STC15104E.h"
-#include "DS1302.h"
-#include "display.h"
-#include "uart.h"
-
-#define uchar unsigned char
-#define uint unsigned int
+#include "header/STC15104E.h"
+#include "header/display.h"
+#include "header/key.h"
+#include "header/common.h"
+#include "header/ds1302.h"
+#include "header/uart.h"
 
 int tt_getTime = 0;
 int tt_refresh = 0;
 
-void delay(unsigned int n)
-{
-	unsigned int x,y;
-	for(x=n;x>0;x--)
-	{
-		for(y=110;y>0;y--);	
-	}
-}
-
 /*************定时器0初始化程序***************/
-void timer0_init()
-{
-	TMOD |= 0X21;	  //定时器1工作方式1
-	ET0  = 1;		  //开定时器0中断
+// void timer0_init()
+// {
+// 	TMOD |= 0X21;	  //定时器1工作方式1
+// 	ET0  = 1;		  //开定时器0中断
 
-	TH0=0xfe;    //定时10ms中断一次
-	TL0=0x0c;	 //500us
+// 	TH0=0xfe;    //定时10ms中断一次
+// 	TL0=0x0c;	 //500us
 
-	EA   = 1;	 	  //开总中断
-	TR0  = 1;		  //允许定时器0定时
-}
+// 	EA   = 1;	 	  //开总中断
+// 	TR0  = 1;		  //允许定时器0定时
+// }
 
 main()
 {
@@ -59,7 +49,9 @@ main()
 
 	while(1){
 		//这个延时太长会导致软串口丢数据
-		delay(1);
+		delay_ms(1);
+
+		KEY_keyscan();
 
 		//软串口服务程序
 		UART_SoftUartIsr();
@@ -70,7 +62,7 @@ main()
 		{
 			tt_getTime = 0;
 
-			DS1302_GetTime();
+			DS1302_GetTimeFromDS1302();
 
 			//根据上面的GetTime取到的数据(定义再DS302.h里面的全局变量shi fen miao nian yue ri等)更新显示用的数据
 			//该处仅仅更新内存里的数据(定义在display.h里的 d1 d2 d3 d4)，真正刷新画面是在后面的showPosition函数里做的）
