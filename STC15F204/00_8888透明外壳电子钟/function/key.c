@@ -35,20 +35,38 @@ void KEY_keyscan(){
             doBtn1Up();
         }
     }
+
+    if (BTN2 == 0 && btn2Status == STS_KEYUP){
+        delay_ms(1);
+        if (BTN2 == 0 && btn2Status == STS_KEYUP){
+            btn2Status = STS_KEYDOWN;
+            // 按键2被按下
+            doBtn2Down();
+        }
+    }
+
+    if (BTN2 == 1 && btn2Status == STS_KEYDOWN){
+        delay_ms(1);
+        if (BTN2 == 1 && btn2Status == STS_KEYDOWN){
+            btn2Status = STS_KEYUP;
+            // 按键2放开
+            doBtn2Up();
+        }
+    }
 }
 
 void doBtn1Down(){
-    DISPLAY_ShowMMDD();
+    DISPLAY_ShowMMDD_forAWhile(30);
 }
 
 void doBtn1Up(){
-    DISPLAY_ShowHHMM();
+    //DISPLAY_ShowHHMM();
 }
 
 void doBtn2Down(){
-    //
+    DISPLAY_ShowYYYY_forAWhile(30);
 }
 
 void doBtn2Up(){
-    //
+    //DISPLAY_ShowHHMM();
 }

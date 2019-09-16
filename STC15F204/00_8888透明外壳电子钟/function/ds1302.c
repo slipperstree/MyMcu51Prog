@@ -342,6 +342,10 @@ void DS1302_WriteTime_Year(uchar nonBcdData) {
 	WriteTime(0x8c, dec2Bcd(nonBcdData));  //Äê
 }
 
+uchar DS1302_GetYear(){
+	return nian;
+}
+
 uchar DS1302_GetMonth(){
 	return yue;
 }

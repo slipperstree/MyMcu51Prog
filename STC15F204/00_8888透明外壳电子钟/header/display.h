@@ -9,5 +9,11 @@ void DISPLAY_refreshDisplay();
 
 void DISPLAY_ShowHHMM();
 void DISPLAY_ShowMMDD();
+void DISPLAY_ShowYYYY();
+
+// 显示一小会MMDD，然后切换回原来的显示状态
+void DISPLAY_ShowMMDD_forAWhile(int interval);
+// 显示一小会YYYY，然后切换回原来的显示状态
+void DISPLAY_ShowYYYY_forAWhile(int interval);
 
 #endif

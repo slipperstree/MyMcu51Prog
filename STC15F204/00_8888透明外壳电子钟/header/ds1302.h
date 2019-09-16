@@ -46,6 +46,8 @@ void DS1302_WriteTime_Month(unsigned char nonBcdData);
  */
 void DS1302_WriteTime_Year(unsigned char nonBcdData);
 
+unsigned char DS1302_GetYear();
+
 unsigned char DS1302_GetMonth();
 
 unsigned char DS1302_GetDay();

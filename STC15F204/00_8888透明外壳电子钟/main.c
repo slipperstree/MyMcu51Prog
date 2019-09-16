@@ -83,16 +83,8 @@ main()
 }
 
 //void Timer0() interrupt 1  //调用定时器0
-void Timer0()
-{
-	TH0=0xfe;    //定时10ms中断一次
-	TL0=0x0c;	 //500us
-
-	// nowPos++;
-	// if (nowPos==5)
-	// {
-	// 	nowPos=1;
-	// }
-
-	// showPosition(nowPos);
-}
+// void Timer0()
+// {
+// 	TH0=0xfe;    //定时10ms中断一次
+// 	TL0=0x0c;	 //500us
+// }
