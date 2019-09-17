@@ -7,8 +7,8 @@
 #define DISP_MODE_YYYY		3
 #define DISP_MODE_MMSS		4
 
-uchar dispMode = DISP_MODE_HHMM;
-uchar dispModeBefore = DISP_MODE_HHMM;
+static uchar dispMode = DISP_MODE_HHMM;
+static uchar dispModeBefore = DISP_MODE_HHMM;
 
 // 数码管引脚连接 位
 sbit A1 = P3^2;
@@ -27,25 +27,25 @@ sbit segG = P2^6;
 sbit segDP = P2^7;
 
 //第124位用数字显示code
-uchar code digit124[17]={~0x3f,~0x06,~0x5b,~0x4f,~0x66,~0x6d,~0x7d,~0x07,~0x7f,~0x6f, // 0-9
+static uchar code digit124[17]={~0x3f,~0x06,~0x5b,~0x4f,~0x66,~0x6d,~0x7d,~0x07,~0x7f,~0x6f, // 0-9
 							~0x77,~0x7c,~0x39,~0x5e,~0x79,~0x71}; // 0-F
 //第3位数码管在硬件上是倒过来接的，数字显示code不一样，要改
-uchar code digit3[17]={~0x3f,~0x30,~0x5b,~0x79,~0x74,~0x6d,~0x6f,~0x38,~0x7f,~0x7d, // 0-9
+static uchar code digit3[17]={~0x3f,~0x30,~0x5b,~0x79,~0x74,~0x6d,~0x6f,~0x38,~0x7f,~0x7d, // 0-9
 							~0x77,~0x7c,~0x39,~0x5e,~0x79,~0x71}; // 0-F(wrong)
 //数码管动态刷新当前位
-uchar nowPos = 1;
+static uchar nowPos = 1;
 
 //数码管各位上的显示内容
-uchar dispDat[4];
+static uchar dispDat[4];
 
 //标志位
-uchar bdata flagByte;
+static uchar bdata flagByte;
 sbit flagIsFlash = flagByte^0;				//闪烁状态标志
 sbit flagIsShowingForAWhile = flagByte^1;	//暂时显示状态标志
-int showForAWhileInterval = 0;			//暂时显示时间计数
+static int showForAWhileInterval = 0;			//暂时显示时间计数
 
 //画面每刷新一次计数器加一，可用于动画，闪烁等动态效果
-uchar frameCounter = 0;
+static uchar frameCounter = 0;
 
 void showPosition(uchar pos, uchar dispDat){
 

@@ -5,23 +5,23 @@ sbit	SCLK_DS1302=P1^2;
 sbit	RST_DS1302=P1^0;
 sbit	IO_DS1302=P1^1;
 
-unsigned char code DS1302_ID[]="DaNKer";
+static unsigned char code DS1302_ID[]="DaNKer";
 
 //==============系统标志====================================================
-unsigned char clock_ctr=0;
+static unsigned char clock_ctr=0;
 #define        F_CTR_HR    0x80        //1=12小时制，0=24小时制
 #define        F_CTR_AP    0x20        //1=AM,0=PM
 #define        F_CTR_AL    0x01        //闹钟标志,为1时打开闹钟
 //=========================================================================
-unsigned char  SEC_SCAN_MODE = 0;            //秒钟显示模式
+static unsigned char  SEC_SCAN_MODE = 0;            //秒钟显示模式
 
 #define		ALARM_ADDR	0xD0		//闹钟时间存放地址
 #define		SecMod_WrADDR	0xD6
 #define		SecMod_ReADDR	0xD7
 
-unsigned char alarm_shi;alarm_fen;
-unsigned char nian,yue,ri,shi,fen,miao;
-unsigned char alarm_shi;alarm_fen;
+static unsigned char alarm_shi;alarm_fen;
+static unsigned char nian,yue,ri,shi,fen,miao;
+static unsigned char alarm_shi;alarm_fen;
 
 /************************DS1302**********************/
 void SendByte(unsigned char sdate)		  //单片机发送一位数据 

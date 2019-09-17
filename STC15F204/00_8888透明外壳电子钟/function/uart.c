@@ -46,24 +46,24 @@
 	typedef unsigned char BYTE;
 	typedef unsigned int WORD;
 
-	BYTE TBUF,RBUF;
-	BYTE TDAT,RDAT;
-	BYTE TCNT,RCNT;
-	BYTE TBIT,RBIT;
-	BOOL TING,RING;
-	BOOL TEND,REND;
+	static BYTE TBUF,RBUF;
+	static BYTE TDAT,RDAT;
+	static BYTE TCNT,RCNT;
+	static BYTE TBIT,RBIT;
+	static BOOL TING,RING;
+	static BOOL TEND,REND;
 
 	#define SEND_BUFF_SIZE  32
 	// idata : 一般的变量(data，隐式)只能访问片内RAM的低128字节内存超过128个字节
 	// 超过128字节就不允许定义一般的变量而需要显式使用idata后就可以访问片内RAM高128个字节了
 	// 写这个程序时使用的单片机只有片内的256字节没有外部RAM，所以不可以使用xdata，只能使用idata
-	idata uchar sendBuf[SEND_BUFF_SIZE];  
-	BYTE t, r;
+	static idata uchar sendBuf[SEND_BUFF_SIZE];  
+	static BYTE t, r;
 #endif
 
-uchar rcvChar;
-uchar bufS[3];
-uchar bufE[3];
+static uchar rcvChar;
+static uchar bufS[3];
+static uchar bufE[3];
 
 #define UART_STS_CHK_HEAD     0
 #define UART_STS_RCV_BODY     1
@@ -71,16 +71,16 @@ uchar bufE[3];
 #define UART_HEAD_CMD     'S' // 定义命令消息头 [S]
 #define UART_HEAD_TXT     'T' // 定义文本消息头 [T]
 
-uchar uartStatus = UART_STS_CHK_HEAD;
-uchar checkHead_len = 0;
-uchar checkFoot_len = 0;
-uchar uartHead = 0x00;
+static uchar uartStatus = UART_STS_CHK_HEAD;
+static uchar checkHead_len = 0;
+static uchar checkFoot_len = 0;
+static uchar uartHead = 0x00;
 
 // 32个ascii，加1是用来保存字符串结束符号'\0' (0x00)用的
 #define RCV_BUFF_SIZE 32
-uchar strBuff[RCV_BUFF_SIZE+1];
+static uchar strBuff[RCV_BUFF_SIZE+1];
 // 已经接收到的字符数，用于检测是否超过范围
-uchar rcvCharCnt = 0;
+static uchar rcvCharCnt = 0;
 
 void rcvCharProc(uchar rcvChar);
 void doMessage(uchar);
