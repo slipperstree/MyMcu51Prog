@@ -56,4 +56,6 @@ unsigned char DS1302_GetHour();
 
 unsigned char DS1302_GetMinute();
 
+unsigned char DS1302_GetSecond();
+
 #endif

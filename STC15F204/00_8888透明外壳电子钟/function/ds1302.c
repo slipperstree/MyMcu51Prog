@@ -361,3 +361,7 @@ uchar DS1302_GetHour(){
 uchar DS1302_GetMinute(){
 	return fen;
 }
+
+uchar DS1302_GetSecond(){
+	return miao;
+}

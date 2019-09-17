@@ -5,6 +5,7 @@
 #define DISP_MODE_HHMM		1
 #define DISP_MODE_MMDD		2
 #define DISP_MODE_YYYY		3
+#define DISP_MODE_MMSS		4
 
 uchar dispMode = DISP_MODE_HHMM;
 uchar dispModeBefore = DISP_MODE_HHMM;
@@ -104,7 +105,7 @@ void DISPLAY_updateDisplay() {
 			// 显示HH:MM
 			dispDat[0] = digit124[DS1302_GetHour() % 100 / 10];
 			dispDat[1] = digit124[DS1302_GetHour() % 10] 			& (flagIsFlash ? 0x7f : 0xff);		// 最后的& 0x7f是为了显示dp
-			dispDat[2] = digit3[DS1302_GetMinute() % 100 / 10] 		& (flagIsFlash ? 0x7f : 0xff);		// 最后的& 0x7f是为了显示dp
+			dispDat[2] =   digit3[DS1302_GetMinute() % 100 / 10] 		& (flagIsFlash ? 0x7f : 0xff);		// 最后的& 0x7f是为了显示dp
 			dispDat[3] = digit124[DS1302_GetMinute() % 10];
 			break;
 
@@ -112,7 +113,7 @@ void DISPLAY_updateDisplay() {
 			// 显示MM.DD
 			dispDat[0] = digit124[DS1302_GetMonth() % 100 / 10];
 			dispDat[1] = digit124[DS1302_GetMonth() % 10] 			& 0x7f;		// 最后的& 0x7f是为了显示dp
-			dispDat[2] = digit3[DS1302_GetDay() % 100 / 10];
+			dispDat[2] =   digit3[DS1302_GetDay() % 100 / 10];
 			dispDat[3] = digit124[DS1302_GetDay() % 10];
 			break;
 		
@@ -120,8 +121,16 @@ void DISPLAY_updateDisplay() {
 			// 显示YYYY
 			dispDat[0] = digit124[2];
 			dispDat[1] = digit124[0];
-			dispDat[2] = digit3[DS1302_GetYear() % 100 / 10];
+			dispDat[2] =   digit3[DS1302_GetYear() % 100 / 10];
 			dispDat[3] = digit124[DS1302_GetYear() % 10];
+			break;
+
+		case DISP_MODE_MMSS:
+			// 显示MM:SS
+			dispDat[0] = digit124[DS1302_GetMinute() % 100 / 10];
+			dispDat[1] = digit124[DS1302_GetMinute() % 10] 			& 0x7f;		// 最后的& 0x7f是为了显示dp
+			dispDat[2] =   digit3[DS1302_GetSecond() % 100 / 10] 	& 0x7f;		// 最后的& 0x7f是为了显示dp
+			dispDat[3] = digit124[DS1302_GetSecond() % 10];
 			break;
 
 		default:
@@ -177,4 +186,13 @@ void DISPLAY_ShowYYYY(){
 // 显示一小会YYYY，然后切换回原来的显示状态
 void DISPLAY_ShowYYYY_forAWhile(int interval){
 	showModeForAWhile(DISP_MODE_YYYY, interval);
+}
+
+void DISPLAY_ShowMMSS(){
+	dispMode = DISP_MODE_MMSS;
+}
+
+// 显示一小会MMSS，然后切换回原来的显示状态
+void DISPLAY_ShowMMSS_forAWhile(int interval){
+	showModeForAWhile(DISP_MODE_MMSS, interval);
 }

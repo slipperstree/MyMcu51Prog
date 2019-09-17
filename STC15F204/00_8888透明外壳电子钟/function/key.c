@@ -29,7 +29,7 @@
 
     // 按键1的双击事件
     void doBtn1DBClick(){
-        DISPLAY_ShowYYYY_forAWhile(30);
+        DISPLAY_ShowMMSS_forAWhile(100);
     }
 
     void doBtn2Down(){
