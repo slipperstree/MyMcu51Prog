@@ -193,7 +193,7 @@ void UART_init()
         }
 	}
 
-	void SendData(BYTE dat)
+	void UART_SendByte(BYTE dat)
 	{
 		sendBuf[r++ & 0x1f] = dat;
 	}
@@ -202,7 +202,7 @@ void UART_init()
 	{
 		while (*s)              //Check the end of the string
 		{
-			SendData(*s++);     //Send current char and increment string ptr
+			UART_SendByte(*s++);     //Send current char and increment string ptr
 		}
 	}
 

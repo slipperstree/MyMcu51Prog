@@ -139,6 +139,7 @@ void DISPLAY_refreshDisplay() {
 	showPosition(nowPos, dispDat[nowPos]);
 }
 
+// 显示一小会指定mode，然后切换回原来的显示状态
 void showModeForAWhile(uchar mode, int interval) {
 
 	// 当前为非暂时显示状态才允许切换
