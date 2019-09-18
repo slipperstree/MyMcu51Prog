@@ -38,6 +38,7 @@ main()
 	//timer0_init();
 	DS1302_init();
 	UART_init();
+	KEY_init();
 
 	// 测试用设置时间(2019/09/14 15:00:00)
 	// WriteTime_Sec(0);	//秒
