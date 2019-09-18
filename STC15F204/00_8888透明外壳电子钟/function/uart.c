@@ -8,7 +8,7 @@
 #define HARDWARE_UART    0
 #define SOFTWARE_UART    1
 
-// 硬件串口和软件串口可指定
+// 硬件串口和软件串口可指定（如果使用软串口会占用定时器0）
 #define UART_TYPE SOFTWARE_UART
 
 #if (UART_TYPE == HARDWARE_UART)

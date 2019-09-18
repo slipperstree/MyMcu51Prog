@@ -18,35 +18,11 @@
 int tt_getTime = 0;
 int tt_refresh = 0;
 
-/*************定时器0初始化程序***************/
-// void timer0_init()
-// {
-// 	TMOD |= 0X21;	  //定时器1工作方式1
-// 	ET0  = 1;		  //开定时器0中断
-
-// 	TH0=0xfe;    //定时10ms中断一次
-// 	TL0=0x0c;	 //500us
-
-// 	EA   = 1;	 	  //开总中断
-// 	TR0  = 1;		  //允许定时器0定时
-// }
-
 main()
 {
-	uchar nowPos = 1;
-
-	//timer0_init();
 	DS1302_init();
 	UART_init();
 	KEY_init();
-
-	// 测试用设置时间(2019/09/14 15:00:00)
-	// WriteTime_Sec(0);	//秒
-	// WriteTime_Min(0);  	//分
-    // WriteTime_Hour(15);  //时
-	// WriteTime_Day(14);  	//日
-	// WriteTime_Month(9);  //月
-	// WriteTime_Month(19);  //年
 
 	while(1){
 		//这个延时太长会导致软串口丢数据
@@ -82,10 +58,3 @@ main()
 		}
 	}
 }
-
-//void Timer0() interrupt 1  //调用定时器0
-// void Timer0()
-// {
-// 	TH0=0xfe;    //定时10ms中断一次
-// 	TL0=0x0c;	 //500us
-// }
