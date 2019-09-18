@@ -45,25 +45,30 @@
         DISPLAY_ShowMMDD_forAWhile(30);
     }
 
-    // 按键回调事件函数指针类型定义
+    // 按键回调事件函数指针类型定义 （不要修改）
     // 定义了一个名为『pBtnEventFunc』的函数指针类型，可以指向的函数没有返回值，没有参数
     typedef void (*pBtnEventFunc)();
-    void keyScanCommon(uchar btnIdx, uchar btnUpDown, pBtnEventFunc fnClick, pBtnEventFunc fnDBClick);
+
+    // 按键扫描的共通函数定义 （不要修改）
+    void keyScanCommon(uchar btnUpDown, pBtnEventFunc fnClick, pBtnEventFunc fnDBClick, uchar btnIdx);
     
-    // 主函数main里要循环调用该函数（函数名不可以修改）
+    // 主函数main里要循环调用该函数（函数名不可以修改，内容根据需要自行增减）
     // 有几个按键就需要在本函数中调用几次keyScanCommon子函数
     void KEY_keyscan(){
         
         uchar idx = 0;
 
-        // 依次扫描所有按键，并传递回调用的函数指针
-        // 第一个参数idx++不用改
-        // 第二个参数传递各按键的电平值即可，也就是定义的sbit名即可
-        // 第三个参数是按键发生单击时调用的函数名
-        // 第四个参数时按键发生双击时调用的函数名
+        // 依次扫描所有按键，并传递回调用的函数指针(理论上支持任意多个按键)
+        // 参数1：传递各按键的电平值即可，也就是定义的sbit名即可
+        // 参数2：按键发生【单击事件】时希望被调用的函数名
+        // 参数3：按键发生【双击事件】时希望被调用的函数名
+        // 参数4：idx++不用改
         // 根据业务的需要，有可能只需要响应单击事件或者只需要响应双击事件，但是即使不需要，也至少准备一个空函数传递进去
         keyScanCommon(idx++, BTN1, doBtn1Click, doBtn1DBClick);
         keyScanCommon(idx++, BTN2, doBtn2Click, doBtn2DBClick);
+        //keyScanCommon(idx++, BTN3, doBtn3Click, doBtn4DBClick);
+        //keyScanCommon(idx++, BTN4, doBtn3Click, doBtn4DBClick);
+        //....
 
     }
 
@@ -93,11 +98,11 @@ void KEY_init(){
 }
 
 // 共通的按键扫描逻辑
-// btnIdx : 按键号码（从0开始）
 // btnbtnUpDown : 按键的键值（电平）
 // fnClick : 单击事件回调函数（判定发生单击事件的时候调用指定函数）
 // fnDBClick : 双击事件回调函数（判定发生双击事件的时候调用指定函数）
-void keyScanCommon(uchar btnIdx, uchar btnUpDown, pBtnEventFunc fnClick, pBtnEventFunc fnDBClick){
+// btnIdx : 按键编号（从0开始）不同的按键不重复即可，目的是每个按键使用的状态变量不可以复用，通过数组下标各自分开
+void keyScanCommon(uchar btnUpDown, pBtnEventFunc fnClick, pBtnEventFunc fnDBClick, uchar btnIdx){
     
     // 按键按下 且 之前为松开状态：【按键刚刚被按下】
     if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_CLICK_START){
