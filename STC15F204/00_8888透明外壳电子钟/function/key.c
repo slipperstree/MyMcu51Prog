@@ -65,7 +65,7 @@
         // 参数4：idx++不用改
         // 根据业务的需要，有可能只需要响应单击事件或者只需要响应双击事件，但是即使不需要，也至少准备一个空函数传递进去
         keyScanCommon(BTN1, doBtn1Click, doBtn1DBClick, idx++);
-        keyScanCommon(BTN2, doBtn2Click, doBtn2DBClick, idx++;
+        keyScanCommon(BTN2, doBtn2Click, doBtn2DBClick, idx++);
         //keyScanCommon(BTN3, doBtn3Click, doBtn4DBClick, idx++);
         //keyScanCommon(BTN4, doBtn3Click, doBtn4DBClick, idx++);
         //....
