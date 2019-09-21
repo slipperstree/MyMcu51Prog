@@ -20,15 +20,41 @@
 // ******* 根据需要修改下列用于判断单击，双击有效的时间长短 ***********************************
 
     #define TICK_WAIT_CLICK_END         0x0800    //判断单击用，按下和弹起之间不能超过多久
-    #define TICK_WAIT_DBCLICK_START     0x0600    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）
-    #define TICK_KEEPDOWN               0x2000    //判断按住不放用，按下以后需要持续多久
+    #define TICK_WAIT_DBCLICK_START     0x0100    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）
+    #define TICK_KEEPDOWN               0x1000    //判断按住不放用，按下以后需要持续多久
     #define TICK_KEEPDOWN_NEXT          0x0500    //按住不放的时候，每隔多久自动触发一次按住不放的事件
 
 // ******* 根据业务需要自定义各按键按下的处理函数（函数名无所谓，但必须是void(void)形式，而且需要在KEY_keyscan中作为回调函数传递给共通的扫描函数） ***********************************
 
     // 按键1 单击
     void doBtn1Click(){
-        DISPLAY_ShowMMDD_forAWhile(30);
+        switch (DISPLAY_GetDispMode())
+        {
+            case DISP_MODE_SET_YEAR:
+                // 年++
+                DISPLAY_SetYearAdd();
+                break;
+            case DISP_MODE_SET_MONTH:
+                // 月++
+                DISPLAY_SetMonthAdd();
+                break;
+            case DISP_MODE_SET_DAY:
+                // 日++
+                DISPLAY_SetDayAdd();
+                break;
+            case DISP_MODE_SET_HOUR:
+                // 小时++
+                DISPLAY_SetHourAdd();
+                break;
+            case DISP_MODE_SET_MINUTE:
+                // 分钟++
+                DISPLAY_SetMinuteAdd();
+                break;
+            
+            default:
+                DISPLAY_ShowMMDD_forAWhile(30);
+                break;
+        }
     }
 
     // 按键1 双击
@@ -38,12 +64,66 @@
 
     // 按键1 长按（只触发一次）
     void doBtn1KeepPressStart(){
-        DISPLAY_ShowYYYY();
+        // 根据当前状态切换到下一个状态
+        switch (DISPLAY_GetDispMode())
+        {
+            case DISP_MODE_SET_YEAR:
+                // 切换到月设置
+                DISPLAY_SetMonthMode();
+                break;
+            case DISP_MODE_SET_MONTH:
+                // 切换到日设置
+                DISPLAY_SetDayMode();
+                break;
+            case DISP_MODE_SET_DAY:
+                // 切换到小时设置
+                DISPLAY_SetHourMode();
+                break;
+            case DISP_MODE_SET_HOUR:
+                // 切换到分钟设置
+                DISPLAY_SetMinuteMode();
+                break;
+            case DISP_MODE_SET_MINUTE:
+                // 全部设置完成，写入DS1302
+                DISPLAY_SetComplite();
+                break;
+
+            default:
+                // 进入年设置模式
+                DISPLAY_SetYearMode();
+                break;
+        }
     }
 
     // 按键2 单击
     void doBtn2Click(){
-        DISPLAY_ShowYYYY_forAWhile(30);
+        switch (DISPLAY_GetDispMode())
+        {
+            case DISP_MODE_SET_YEAR:
+                // 年--
+                DISPLAY_SetYearMinus();
+                break;
+            case DISP_MODE_SET_MONTH:
+                // 月--
+                DISPLAY_SetMonthMinus();
+                break;
+            case DISP_MODE_SET_DAY:
+                // 日--
+                DISPLAY_SetDayMinus();
+                break;
+            case DISP_MODE_SET_HOUR:
+                // 小时--
+                DISPLAY_SetHourMinus();
+                break;
+            case DISP_MODE_SET_MINUTE:
+                // 分钟--
+                DISPLAY_SetMinuteMinus();
+                break;
+
+            default:
+                DISPLAY_ShowYYYY_forAWhile(30);
+                break;
+        }
     }
 
     // 按键2 双击
@@ -80,8 +160,8 @@
         // 参数4：按键发生【按住不放开始事件】】时希望被调用的函数名
         // 参数5：idx++不用改
         // 根据业务的需要，用不上的事件直接传递 0 即可
-        keyScanCommon(BTN1, doBtn1Click, doBtn1DBClick, doBtn1KeepPressStart, idx++);
-        keyScanCommon(BTN2, doBtn2Click, doBtn2DBClick,                    0, idx++);
+        keyScanCommon(BTN1, doBtn1Click, 0, doBtn1KeepPressStart, idx++);
+        keyScanCommon(BTN2, doBtn2Click, 0, doBtn2KeepPressStart, idx++);
         //keyScanCommon(BTN3, doBtn3Click,             0, idx++); // 不需要双击事件
         //keyScanCommon(BTN4,           0, doBtn4DBClick, idx++); // 不需要单击事件
         //....
@@ -96,10 +176,10 @@
 #define STS_WAIT_DBCLICK_START      4
 #define STS_WAIT_DBCLICK_END        5
 
-static uchar btnStatus[KEY_CNT];
-static uint ttWaitKeyClickEnd[KEY_CNT];         //单击开始后经过的时间
-static uint ttWaitKeyDBClickStart[KEY_CNT];     //单击完成后经过的时间，如果在TICK_DCLICK时间内又检测到按键按下则单击失效
-static uint ttWaitKeyDBClickEnd[KEY_CNT];       //双击开始后经过的时间
+static idata uchar btnStatus[KEY_CNT];
+static idata uint ttWaitKeyClickEnd[KEY_CNT];         //单击开始后经过的时间
+static idata uint ttWaitKeyDBClickStart[KEY_CNT];     //单击完成后经过的时间，如果在TICK_DCLICK时间内又检测到按键按下则单击失效
+static idata uint ttWaitKeyDBClickEnd[KEY_CNT];       //双击开始后经过的时间
 
 // 主函数main里需要调用一次初始化
 void KEY_init(){

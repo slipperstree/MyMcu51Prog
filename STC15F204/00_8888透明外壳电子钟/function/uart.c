@@ -2,6 +2,7 @@
 #include "../header/ds1302.h"
 #include "../header/common.h"
 
+#if 0
 #define FOSC 11059200L      //System frequency
 #define BAUD 9600           //UART baudrate
 
@@ -428,7 +429,7 @@ void doMessage(uchar rcvCnt){
 	    	} else {
 				// 日期时间格式正确，写入时钟芯片，完成校时
 				DS1302_WriteTime_Sec(ss);
-				DS1302_WriteTime_Min(mm);
+				DS1302_WriteTime_Minute(mm);
 				DS1302_WriteTime_Hour(hh);
 				DS1302_WriteTime_Day(DD);
 				DS1302_WriteTime_Month(MM);
@@ -439,4 +440,5 @@ void doMessage(uchar rcvCnt){
 	    }
     }
 }
-//***************************20180325 串口校时**********************************************************
+
+#endif

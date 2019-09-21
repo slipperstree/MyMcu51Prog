@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "*.lua": "lua",
+        "common.h": "c",
+        "stc15104e.h": "c",
+        "display.h": "c",
+        "ds1302.h": "c"
+    }
+}

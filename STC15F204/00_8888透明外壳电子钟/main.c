@@ -3,10 +3,7 @@
 /* 实时时钟采用DS1302芯片
 /* 可以用串口进行校时（以便今后增加ESP8266模块进行网络校时）
 /***************************************************/     
-#include <absacc.h>
-#include <intrins.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "header/STC15104E.h"
 #include "header/display.h"
@@ -21,7 +18,7 @@ int tt_refresh = 0;
 main()
 {
 	DS1302_init();
-	UART_init();
+	//UART_init();
 	KEY_init();
 
 	while(1){
@@ -31,7 +28,7 @@ main()
 		KEY_keyscan();
 
 		//软串口服务程序
-		UART_SoftUartIsr();
+		//UART_SoftUartIsr();
 
 		//获取当前时间
 		tt_getTime++;

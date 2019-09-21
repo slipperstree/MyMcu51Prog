@@ -3,12 +3,12 @@
 
 // 在没有调通DS1302之前或者没有DS1302硬件的情况下可以放开下面这句 ############
 // 对外接口不变的情况下提供『假』的DS1302，也可用于调试程序用，避免修改真实时间
- #define USE_DUMMY_STAB
+//#define USE_DUMMY_STAB
 // 在没有调通DS1302之前或者没有DS1302硬件的情况下可以放开上面这句 ############
 
 #ifdef USE_DUMMY_STAB
 
-	static unsigned char nian,yue,ri,shi,fen,miao;
+	static idata uchar nian,yue,ri,shi,fen,miao;
 
 	//==============================================================================
 	//	DS1302初使化，增加了初使化标识
@@ -54,7 +54,7 @@
 	/*
 	传入十进制数据，自动转成BCD并写入DS1302
 	*/
-	void DS1302_WriteTime_Min(uchar nonBcdData) {
+	void DS1302_WriteTime_Minute(uchar nonBcdData) {
 		fen = nonBcdData;
 	}
 
@@ -90,23 +90,23 @@
 	sbit	RST_DS1302=P1^0;
 	sbit	IO_DS1302=P1^1;
 
-	static unsigned char code DS1302_ID[]="DaNKer";
+	static uchar code DS1302_ID[]="DaNKer";
 
 	//==============系统标志====================================================
-	static unsigned char clock_ctr=0;
+	static idata uchar clock_ctr=0;
 	#define        F_CTR_HR    0x80        //1=12小时制，0=24小时制
 	#define        F_CTR_AP    0x20        //1=AM,0=PM
 	#define        F_CTR_AL    0x01        //闹钟标志,为1时打开闹钟
 	//=========================================================================
-	static unsigned char  SEC_SCAN_MODE = 0;            //秒钟显示模式
+	static idata uchar  SEC_SCAN_MODE = 0;            //秒钟显示模式
 
 	#define		ALARM_ADDR	0xD0		//闹钟时间存放地址
 	#define		SecMod_WrADDR	0xD6
 	#define		SecMod_ReADDR	0xD7
 
-	static unsigned char alarm_shi;alarm_fen;
-	static unsigned char nian,yue,ri,shi,fen,miao;
-	static unsigned char alarm_shi;alarm_fen;
+	static idata uchar alarm_shi;alarm_fen;
+	static idata uchar nian,yue,ri,shi,fen,miao;
+	static idata uchar alarm_shi;alarm_fen;
 
 	/************************DS1302**********************/
 	void SendByte(unsigned char sdate)		  //单片机发送一位数据 
@@ -280,8 +280,9 @@
 	//=========================================================================
 	void DS1302_GetTimeFromDS1302()
 	{
-		static unsigned char i=0,temp1;
+		static idata uchar i=0,temp1;
 		unsigned char time_H,time_L,temp;
+
 		switch(i)
 		{
 			case 0:    temp=ReadTime(0x8D);        //年
@@ -395,7 +396,7 @@
 	/*
 	传入十进制数据，自动转成BCD并写入DS1302
 	*/
-	void DS1302_WriteTime_Min(uchar nonBcdData) {
+	void DS1302_WriteTime_Minute(uchar nonBcdData) {
 		WriteTime(0x82, dec2Bcd(nonBcdData));  	//分
 	}
 

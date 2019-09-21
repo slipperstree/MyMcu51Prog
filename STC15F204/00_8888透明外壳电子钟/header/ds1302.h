@@ -24,7 +24,7 @@ void DS1302_WriteTime_Sec(unsigned char nonBcdData);
 /*
  传入十进制数据，自动转成BCD并写入DS1302
  */
-void DS1302_WriteTime_Min(unsigned char nonBcdData);
+void DS1302_WriteTime_Minute(unsigned char nonBcdData);
 
 /*
  传入十进制数据，自动转成BCD并写入DS1302
