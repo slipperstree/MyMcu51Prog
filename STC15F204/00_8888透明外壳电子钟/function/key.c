@@ -19,9 +19,9 @@
 
 // ******* 根据需要修改下列用于判断单击，双击有效的时间长短 ***********************************
 
-    #define TICK_WAIT_CLICK_END         0x0800    //判断单击用，按下和弹起之间不能超过多久
-    #define TICK_WAIT_DBCLICK_START     0x0100    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）
-    #define TICK_KEEPDOWN               0x1000    //判断按住不放用，按下以后需要持续多久
+    #define TICK_WAIT_CLICK_END         0x2500    //判断单击用，按下和弹起之间不能超过多久
+    #define TICK_WAIT_DBCLICK_START     0x0400    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）
+    #define TICK_KEEPDOWN               0x4000    //判断按住不放用，按下以后需要持续多久
     #define TICK_KEEPDOWN_NEXT          0x0500    //按住不放的时候，每隔多久自动触发一次按住不放的事件
 
 // ******* 根据业务需要自定义各按键按下的处理函数（函数名无所谓，但必须是void(void)形式，而且需要在KEY_keyscan中作为回调函数传递给共通的扫描函数） ***********************************
@@ -52,7 +52,7 @@
                 break;
             
             default:
-                DISPLAY_ShowMMDD_forAWhile(30);
+                DISPLAY_ShowMMDD_forAWhile(100);
                 break;
         }
     }
@@ -121,7 +121,7 @@
                 break;
 
             default:
-                DISPLAY_ShowYYYY_forAWhile(30);
+                DISPLAY_ShowYYYY_forAWhile(100);
                 break;
         }
     }

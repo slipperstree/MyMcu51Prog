@@ -14,11 +14,19 @@ enum EnumDispMode {
 	DISP_MODE_SET_MINUTE
     };
 
-enum SPEED {
-	DISPLAY_SPEED_LV_1 = 16,
-	DISPLAY_SPEED_LV_2 = 8,
-	DISPLAY_SPEED_LV_3 = 4,
-	DISPLAY_SPEED_LV_4 = 2
+enum EnumSpeed {
+	DISPLAY_SPEED_LV_1 = 64,
+	DISPLAY_SPEED_LV_2 = 32,
+	DISPLAY_SPEED_LV_3 = 16,
+	DISPLAY_SPEED_LV_4 = 8,
+	DISPLAY_SPEED_LV_5 = 4,
+	DISPLAY_SPEED_LV_6 = 2,
+	DISPLAY_SPEED_LV_7 = 1
+	};
+
+enum EnumBreathMode {
+	DISPLAY_BREATH_MODE_ON,
+	DISPLAY_BREATH_MODE_OFF
 	};
 
 // 刷新显示用的内容，需要在main循环中调用
@@ -26,6 +34,12 @@ void DISPLAY_updateDisplay();
 
 // 刷新显示，需要在main循环中调用
 void DISPLAY_refreshDisplay();
+
+// 设置亮度
+void DISPLAY_setBrightness(unsigned char brightness);
+
+// 设置呼吸效果
+void DISPLAY_SetBreathMode(enum EnumBreathMode mode, enum EnumSpeed speed);
 
 void DISPLAY_ShowHHMM();
 void DISPLAY_ShowMMDD();
@@ -43,7 +57,7 @@ void DISPLAY_ShowMMSS_forAWhile(int interval);
 void DISPLAY_ShowAniScrollLeft(
 	char* str, 
 	unsigned char startPos, unsigned char endPos, 
-	enum SPEED speed,
+	enum EnumSpeed speed,
 	enum EnumDispMode nextMode);
 
 void DISPLAY_SetYearMode();

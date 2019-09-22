@@ -8,10 +8,10 @@ enum EnumDispMode dispMode = DISP_MODE_HHMM;
 enum EnumDispMode dispModeBefore = DISP_MODE_HHMM;
 
 // 数码管引脚连接 位
-sbit A1 = P3^2;
-sbit A2 = P3^3;
-sbit A3 = P3^4;
-sbit A4 = P3^5;
+sbit DIG1 = P3^2;
+sbit DIG2 = P3^3;
+sbit DIG3 = P3^4;
+sbit DIG4 = P3^5;
 
 // 数码管引脚连接 段
 sbit segA = P2^0;
@@ -22,6 +22,10 @@ sbit segE = P2^4;
 sbit segF = P2^5;
 sbit segG = P2^6;
 sbit segDP = P2^7;
+
+// 位 点亮/关闭 电平定义
+#define DIG_ON   0
+#define DIG_OFF  1
 
 //数码管动态刷新当前位
 static_idata_uchar nowPos = 1;
@@ -42,12 +46,40 @@ sbit flagIsFlash = flagByte^0;				//闪烁状态标志
 sbit flagIsShowingForAWhile = flagByte^1;	//暂时显示状态标志
 static_idata_int showForAWhileInterval = 0;			//暂时显示时间计数
 
+// 用于软PWM，控制亮度用 ----------------------------------------------------------------
+// 原理是，PWM计数没有超过 pwmBright 的数值时，目标数码管是通电的也就是点亮的
+// 当计数超过 pwmBright 时则断电关闭目标数码管
+// 最后计数达到PWM总宽度 PWM_WIDTH_ALL 时，当前的目标数码管一个PWM Cycle结束，切换到下一只目标数码管，周而复始
+// 这样，所有数码管在单位时间内通电的时间就是 pwmBright/PWM_WIDTH_ALL ， 从而控制亮度
+// 也就是当pwmBright为1时，最暗，为PWM_WIDTH_ALL时，最亮
+
+// PWM宽度总长，这个值越大，PWM的精度就越高，可设置的亮度最小单位就越精细
+// 但值越大数码管的刷新频率也越低，太大的数值会导致数码管显示闪烁
+#define PWM_WIDTH_ALL 15
+
+// 呼吸模式
+enum EnumBreathMode breathMode = DISPLAY_BREATH_MODE_OFF;
+enum EnumSpeed breathSpeed = DISPLAY_SPEED_LV_6;
+#define BRTH_BRIT_ARR_SIZE 32
+static uchar code breathBrightArray[] = {
+	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,15,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1
+};
+static_idata_uchar nowBreathBright = 0;
+
+// PWM亮度设置，不可以超过 PWM_WIDTH_ALL，不用修改
+static_idata_uchar pwmBright = 1;
+
+// PWM计数用，不用修改
+static_idata_uchar ttPWM = 0;
+
+// 用于软PWM，控制亮度用 ----------------------------------------------------------------
+
 char* aniScrollLeftString;
 static char aniScrollLeftLen = 0;
 static char aniScrollLeftNowPos = 0;
 static char aniScrollLeftEndPos = 0;
 enum EnumDispMode aniScrollLeftNextMode;
-enum SPEED aniScrollLeftSpeed;
+enum EnumSpeed aniScrollLeftSpeed;
 
 //画面每刷新一次计数器加一，可用于动画，闪烁等动态效果
 static_idata_uchar frameCounter = 0;
@@ -164,29 +196,29 @@ uchar getGeWei(uchar dat){
 	return dat % 10;
 }
 
-void showPosition(uchar pos, uchar dispDat){
+void showPosition(uchar pos, uchar dispDat, uchar pwmOnOff){
 
 	// 共阳，位选高电平点亮（用的是三极管驱动，IO输出0，位选呈高电平）
 	// 共阳，段码低电平点亮
 
 	// 防止残影，先清屏，关闭所有显示
-	A4 = A2 = A3 = A1 = 1;
+	DIG4 = DIG2 = DIG3 = DIG1 = 1;
 
 	P2 = dispDat;
 
 	switch (pos)
 	{
 		case 0:
-			A1 = 0;
+			DIG1 = pwmOnOff;
 			break;
 		case 1:
-			A2 = 0;
+			DIG2 = pwmOnOff;
 			break;
 		case 2:
-			A3 = 0;
+			DIG3 = pwmOnOff;
 			break;
 		case 3:
-			A4 = 0;
+			DIG4 = pwmOnOff;
 			break;
 		default:
 			break;
@@ -208,7 +240,7 @@ void DISPLAY_updateDisplay() {
 
 	// 向左滚动文字当前应该显示的位置
 	if (dispMode == DISP_MODE_ANI_SCROLL_LEFT &&
-			 frameCounter % aniScrollLeftSpeed == 0)
+			frameCounter % aniScrollLeftSpeed == 0)
 	{
 		// 本次滚动动画完成后，进入下一个状态
 		if (aniScrollLeftNowPos == aniScrollLeftEndPos)
@@ -218,6 +250,17 @@ void DISPLAY_updateDisplay() {
 		} else {
 			aniScrollLeftNowPos++;
 		}
+	}
+
+	// 呼吸效果
+	if (breathMode == DISPLAY_BREATH_MODE_ON &&
+			frameCounter % breathSpeed == 0)
+	{
+		nowBreathBright++;
+		if (nowBreathBright == BRTH_BRIT_ARR_SIZE) {
+			nowBreathBright = 0;
+		}
+		pwmBright = breathBrightArray[nowBreathBright];
 	}
 
 	// 如果当前正在暂时显示状态下，则判断有没有到时间，如果到时间了就切换回原来的显示模式
@@ -322,12 +365,38 @@ void DISPLAY_updateDisplay() {
 
 // 刷新显示，需要在main循环中调用
 void DISPLAY_refreshDisplay() {
-	nowPos++;
-	if (nowPos>=4)
+	
+	// PWM亮度控制
+	ttPWM++;
+	if (ttPWM <= pwmBright)
 	{
-		nowPos=0;
+		showPosition(nowPos, dispDat[nowPos], DIG_ON);
+	} else {
+		showPosition(nowPos, dispDat[nowPos], DIG_OFF);
 	}
-	showPosition(nowPos, dispDat[nowPos]);
+	
+	// 每完成一次PWM的整个宽度就刷新显示下一位数码管
+	if (ttPWM >= PWM_WIDTH_ALL){
+		ttPWM = 0;
+		nowPos++;
+		if (nowPos>=4)
+		{
+			nowPos=0;
+		}
+	}
+}
+
+// 设置亮度
+void DISPLAY_setBrightness(uchar brightness){
+	if (brightness <= PWM_WIDTH_ALL) {
+		pwmBright = brightness;
+	}
+}
+
+// 设置是否打开呼吸效果(亮度渐变)，注意如果打开呼吸效果则会无视光线传感器
+void DISPLAY_SetBreathMode(enum EnumBreathMode mode, enum EnumSpeed speed){
+	breathMode = mode;
+	breathSpeed = speed;
 }
 
 // 显示一小会指定mode，然后切换回原来的显示状态
@@ -387,7 +456,7 @@ enum EnumDispMode DISPLAY_GetDispMode(){
 void DISPLAY_ShowAniScrollLeft(
 	char* str, 
 	uchar startPos, uchar endPos, 
-	enum SPEED speed,
+	enum EnumSpeed speed,
 	enum EnumDispMode nextMode){
 
 	if (dispMode != DISP_MODE_ANI_SCROLL_LEFT)
@@ -519,7 +588,6 @@ void DISPLAY_SetComplite(){
 		DISPLAY_SPEED_LV_3,
 		DISP_MODE_HHMM);
 }
-
 
 void DISPLAY_SetYearAdd(){ttflash = 0; flagIsFlash=FLAG_IS_FLASH_ON; setYear++;}
 void DISPLAY_SetYearMinus(){ttflash = 0; flagIsFlash=FLAG_IS_FLASH_ON; setYear--;}

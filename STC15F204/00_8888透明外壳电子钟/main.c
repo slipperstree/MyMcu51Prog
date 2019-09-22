@@ -21,9 +21,12 @@ main()
 	//UART_init();
 	KEY_init();
 
+	// 开启呼吸效果
+	// DISPLAY_SetBreathMode(DISPLAY_BREATH_MODE_ON, DISPLAY_SPEED_LV_5);
+
 	while(1){
 		//这个延时太长会导致软串口丢数据
-		delay_ms(1);
+		//delay_ms(1);
 
 		KEY_keyscan();
 
@@ -45,7 +48,7 @@ main()
 
 		// 刷新画面 ----------------
 		tt_refresh++;
-		if (tt_refresh >= 10)
+		if (tt_refresh >= 5)
 		{
 			tt_refresh = 0;
 
