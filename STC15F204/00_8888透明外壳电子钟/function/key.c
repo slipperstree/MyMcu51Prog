@@ -57,10 +57,10 @@
         }
     }
 
-    // 按键1 双击
-    void doBtn1DBClick(){
-        DISPLAY_ShowMMSS_forAWhile(30);
-    }
+    // // 按键1 双击
+    // void doBtn1DBClick(){
+    //     DISPLAY_ShowMMSS_forAWhile(30);
+    // }
 
     // 按键1 长按（只触发一次）
     void doBtn1KeepPressStart(){
@@ -126,10 +126,10 @@
         }
     }
 
-    // 按键2 双击
-    void doBtn2DBClick(){
-        DISPLAY_ShowMMDD_forAWhile(30);
-    }
+    // // 按键2 双击
+    // void doBtn2DBClick(){
+    //     DISPLAY_ShowMMDD_forAWhile(30);
+    // }
 
     // 按键2 长按（只触发一次）
     void doBtn2KeepPressStart(){

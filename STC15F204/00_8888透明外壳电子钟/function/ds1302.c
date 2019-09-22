@@ -364,7 +364,6 @@
 				break;
 			case 10:
 				i=0;
-				//GetDispBuf();
 				break;
 			default:i=0;break;
 		}

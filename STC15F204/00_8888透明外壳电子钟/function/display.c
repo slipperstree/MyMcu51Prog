@@ -508,6 +508,7 @@ void DISPLAY_SetComplite(){
 	DS1302_WriteTime_Day(setDay);
 	DS1302_WriteTime_Hour(setHour);
 	DS1302_WriteTime_Minute(setMinute);
+	DS1302_WriteTime_Sec(0);
 
 	// 更新设置时画面显示用buff
 	updateSetDateTimeDispBuff();
