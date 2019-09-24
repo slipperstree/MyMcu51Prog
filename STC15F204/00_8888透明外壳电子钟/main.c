@@ -2,8 +2,8 @@
 /* 电子钟程序
 /* 实时时钟采用DS1302芯片
 /* 可以用串口进行校时（以便今后增加ESP8266模块进行网络校时）
-/***************************************************/     
-#include <string.h>
+/***************************************************/
+//#include <string.h>
 
 #include "header/STC15104E.h"
 #include "header/display.h"
@@ -11,6 +11,7 @@
 #include "header/common.h"
 #include "header/ds1302.h"
 #include "header/uart.h"
+#include "header/sensorAdc.h"
 
 int tt_getTime = 0;
 int tt_refresh = 0;
@@ -18,8 +19,9 @@ int tt_refresh = 0;
 main()
 {
 	DS1302_init();
-	//UART_init();
+	UART_init();
 	KEY_init();
+	ADC_init();
 
 	// 开启呼吸效果
 	// DISPLAY_SetBreathMode(DISPLAY_BREATH_MODE_ON, DISPLAY_SPEED_LV_5);
@@ -31,7 +33,7 @@ main()
 		KEY_keyscan();
 
 		//软串口服务程序
-		//UART_SoftUartIsr();
+		UART_SoftUartIsr();
 
 		//获取当前时间
 		tt_getTime++;

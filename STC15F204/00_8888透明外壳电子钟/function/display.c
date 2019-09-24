@@ -1,7 +1,8 @@
-#include <string.h>
+//#include <string.h>
 
 #include "../header/display.h"
 #include "../header/ds1302.h"
+#include "../header/sensorAdc.h"
 #include "../header/common.h"
 
 enum EnumDispMode dispMode = DISP_MODE_HHMM;
@@ -58,8 +59,8 @@ static_idata_int showForAWhileInterval = 0;			//暂时显示时间计数
 #define PWM_WIDTH_ALL 15
 
 // 呼吸模式
-enum EnumBreathMode breathMode = DISPLAY_BREATH_MODE_OFF;
-enum EnumSpeed breathSpeed = DISPLAY_SPEED_LV_6;
+static enum EnumBreathMode breathMode = DISPLAY_BREATH_MODE_OFF;
+static enum EnumSpeed breathSpeed = DISPLAY_SPEED_LV_6;
 #define BRTH_BRIT_ARR_SIZE 32
 static uchar code breathBrightArray[] = {
 	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,15,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1
@@ -78,8 +79,8 @@ char* aniScrollLeftString;
 static char aniScrollLeftLen = 0;
 static char aniScrollLeftNowPos = 0;
 static char aniScrollLeftEndPos = 0;
-enum EnumDispMode aniScrollLeftNextMode;
-enum EnumSpeed aniScrollLeftSpeed;
+static enum EnumDispMode aniScrollLeftNextMode;
+static enum EnumSpeed aniScrollLeftSpeed;
 
 //画面每刷新一次计数器加一，可用于动画，闪烁等动态效果
 static_idata_uchar frameCounter = 0;
@@ -108,7 +109,7 @@ static uchar code digit124[]={
 //第3位数码管在硬件上是倒过来接的，数字显示code不一样
 static uchar code digit3[]={
 							~0x3f,~0x30,~0x5b,~0x79,~0x74,~0x6d,~0x6f,~0x38,~0x7f,~0x7d, // 0-9
-							~0x77,~0x7c,~0x39,~0x5e,~0x79,~0x71, 	// 11-16:A-F
+							~0x77,~0x7c,~0x0f,~0x5e,~0x79,~0x71, 	// 11-16:A-F
 							~0x57,	// 17:Y
 							~0x31,	// 18:R
 							~0x6d,	// 19:S
@@ -157,21 +158,21 @@ uchar getDispDatByChar(char ch, uchar isDigit3) {
 			ret = isDigit3 ? digit3[ch-0x30] : digit124[ch-0x30];
 			break;
 		case 'A':case 'B':case 'C':case 'D':case 'E':case 'F':
-			// A的ascii=65，减去54得到11，正好是本程序定义的字库里的A的数组下标
-			ret = isDigit3 ? digit3[ch-54] : digit124[ch-54];
+			// A的ascii=65，减去55得到11，正好是本程序定义的字库里的A的数组下标
+			ret = isDigit3 ? digit3[ch-55] : digit124[ch-55];
 			break;
-		case 'Y': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_Y] : digit124[CHAR_DAT_INDEX_Y]; break;
-		case 'R': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_R] : digit124[CHAR_DAT_INDEX_R]; break;
-		case 'S': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_S] : digit124[CHAR_DAT_INDEX_S]; break;
-		case 'T': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_T] : digit124[CHAR_DAT_INDEX_T]; break;
-		case 'L': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_L] : digit124[CHAR_DAT_INDEX_L]; break;
-		case 'H': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_H] : digit124[CHAR_DAT_INDEX_H]; break;
-		case 'J': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_J] : digit124[CHAR_DAT_INDEX_J]; break;
-		case 'I': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_I] : digit124[CHAR_DAT_INDEX_I]; break;
-		case 'P': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_P] : digit124[CHAR_DAT_INDEX_P]; break;
-		case 'U': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_U] : digit124[CHAR_DAT_INDEX_U]; break;
-		case 'N': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_N] : digit124[CHAR_DAT_INDEX_N]; break;
-		case 'O': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_O] : digit124[CHAR_DAT_INDEX_O]; break;
+		//case 'Y': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_Y] : digit124[CHAR_DAT_INDEX_Y]; break;
+		//case 'R': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_R] : digit124[CHAR_DAT_INDEX_R]; break;
+		//case 'S': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_S] : digit124[CHAR_DAT_INDEX_S]; break;
+		//case 'T': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_T] : digit124[CHAR_DAT_INDEX_T]; break;
+		//case 'L': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_L] : digit124[CHAR_DAT_INDEX_L]; break;
+		//case 'H': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_H] : digit124[CHAR_DAT_INDEX_H]; break;
+		//case 'J': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_J] : digit124[CHAR_DAT_INDEX_J]; break;
+		//case 'I': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_I] : digit124[CHAR_DAT_INDEX_I]; break;
+		//case 'P': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_P] : digit124[CHAR_DAT_INDEX_P]; break;
+		//case 'U': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_U] : digit124[CHAR_DAT_INDEX_U]; break;
+		//case 'N': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_N] : digit124[CHAR_DAT_INDEX_N]; break;
+		//case 'O': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_O] : digit124[CHAR_DAT_INDEX_O]; break;
 		case '-': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_MINUS] : digit124[CHAR_DAT_INDEX_MINUS]; break;
 		case ' ': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_SP] : digit124[CHAR_DAT_INDEX_SP]; break;
 	default:
@@ -184,15 +185,23 @@ uchar getDispDatByChar(char ch, uchar isDigit3) {
 uchar getDispDatByString(char* str, char pos, uchar isDigit3) {
 
 	// 默认返回空格
-	if (pos < 0 || pos >= strlen(str)) return 0xff;
+	if (pos < 0 || pos >= My_strlen(str)) return 0xff;
 	return getDispDatByChar(str[pos], isDigit3);
 }
 
-uchar getShiWei(uchar dat){
+uchar getQianWei(uint dat){
+	return dat / 1000;
+}
+
+uchar getBaiWei(uint dat){
+	return dat % 1000 / 100;
+}
+
+uchar getShiWei(uint dat){
 	return dat % 100 / 10;
 }
 
-uchar getGeWei(uchar dat){
+uchar getGeWei(uint dat){
 	return dat % 10;
 }
 
@@ -262,6 +271,29 @@ void DISPLAY_updateDisplay() {
 		}
 		pwmBright = breathBrightArray[nowBreathBright];
 	}
+	
+	// 如果不是呼吸显示效果则根据光强自动适应亮度
+	if (breathMode == DISPLAY_BREATH_MODE_OFF &&
+			frameCounter % breathSpeed == 0)
+	{
+		switch (ADC_GetBright())
+		{
+			case ADC_BRIGHT_MODE_NIGHT:
+				// 最低亮度
+				pwmBright = 1;
+				break;
+			case ADC_BRIGHT_MODE_CLOUD:
+				// 微暗
+				pwmBright = 6;
+				break;
+			case ADC_BRIGHT_MODE_DAY:
+				// 最高亮度
+				pwmBright = 15;
+				break;
+			default:
+				break;
+		}
+	}
 
 	// 如果当前正在暂时显示状态下，则判断有没有到时间，如果到时间了就切换回原来的显示模式
 	if (flagIsShowingForAWhile)
@@ -284,6 +316,18 @@ void DISPLAY_updateDisplay() {
 			dispDat[1] = digit124[getGeWei(DS1302_GetHour())]		& (flagIsFlash ? 0x7f : 0xff);		
 			dispDat[2] =   digit3[getShiWei(DS1302_GetMinute())]	& (flagIsFlash ? 0x7f : 0xff);
 			dispDat[3] = digit124[getGeWei(DS1302_GetMinute())];
+
+			// 光强 调试用
+			// dispDat[0] = getDispDatByChar(' ', 0);
+			// dispDat[1] = digit124[getBaiWei(ADC_GetBrightAdcValue())];
+			// dispDat[2] =   digit3[getShiWei(ADC_GetBrightAdcValue())];
+			// dispDat[3] = digit124[getGeWei(ADC_GetBrightAdcValue())];
+
+			// 温度 调试用
+			// dispDat[0] = getDispDatByChar(' ', 0);
+			// dispDat[1] = digit124[getBaiWei(ADC_GetTempretureAdcValue())];
+			// dispDat[2] =   digit3[getShiWei(ADC_GetTempretureAdcValue())];
+			// dispDat[3] = digit124[getSgetGeWeihiWei(ADC_GetTempretureAdcValue())];
 			break;
 
 		case DISP_MODE_MMDD:
@@ -356,6 +400,14 @@ void DISPLAY_updateDisplay() {
 			dispDat[1] = digit124[getGeWei(setHour)] & 0x7f ;
 			dispDat[2] = flagIsFlash ? digit3[getShiWei(setMinute)] & 0x7f : 0x7f;
 			dispDat[3] = flagIsFlash ? digit124[getGeWei(setMinute)]       : 0xff;
+			break;
+		
+		case DISP_MODE_TEMPRETURE:
+			// 温度：25℃
+			dispDat[0] = digit124[getShiWei(ADC_GetTempreture())];
+			dispDat[1] = digit124[getGeWei(ADC_GetTempreture())];
+			dispDat[2] = getDispDatByChar('C', 1) & 0x7f;
+			dispDat[3] = getDispDatByChar(' ', 0);
 			break;
 
 		default:
@@ -448,6 +500,10 @@ void DISPLAY_ShowMMSS_forAWhile(int interval){
 	showModeForAWhile(DISP_MODE_MMSS, interval);
 }
 
+void DISPLAY_ShowTempreture_forAWhile(int interval){
+	showModeForAWhile(DISP_MODE_TEMPRETURE, interval);
+}
+
 enum EnumDispMode DISPLAY_GetDispMode(){
 	return dispMode;
 }
@@ -462,7 +518,7 @@ void DISPLAY_ShowAniScrollLeft(
 	if (dispMode != DISP_MODE_ANI_SCROLL_LEFT)
 	{
 		aniScrollLeftString = str;
-		aniScrollLeftLen = strlen(str);
+		aniScrollLeftLen = My_strlen(str);
 		aniScrollLeftSpeed = speed;
 		aniScrollLeftNowPos = startPos-4;
 		aniScrollLeftEndPos = endPos-4;
@@ -515,7 +571,7 @@ void DISPLAY_SetYearMode(){
 
 	// 开始播放动画，播放完以后进入设置YYYY状态
 	DISPLAY_ShowAniScrollLeft(
-		dispString, 0, strlen(dispString), 
+		dispString, 0, My_strlen(dispString), 
 		DISPLAY_SPEED_LV_3, 
 		DISP_MODE_SET_YEAR);
 }
@@ -584,7 +640,7 @@ void DISPLAY_SetComplite(){
 
 	// 完整滚动显示一次后，回到默认显示状态HH:MM，完成时间设置
 	DISPLAY_ShowAniScrollLeft(
-		dispString, 0, strlen(dispString)-8, 
+		dispString, 0, My_strlen(dispString)-8, 
 		DISPLAY_SPEED_LV_3,
 		DISP_MODE_HHMM);
 }

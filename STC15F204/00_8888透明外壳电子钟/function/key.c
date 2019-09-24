@@ -18,9 +18,12 @@
     #define KEY_UP   1   // 按键未按下为高电平
 
 // ******* 根据需要修改下列用于判断单击，双击有效的时间长短 ***********************************
-
+    
+    //不需要响应双击时间时可放开本句(可以减少代码体积)
+    #define NOT_USE_DBCLICK                       
+    
     #define TICK_WAIT_CLICK_END         0x2500    //判断单击用，按下和弹起之间不能超过多久
-    #define TICK_WAIT_DBCLICK_START     0x0400    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）
+    #define TICK_WAIT_DBCLICK_START     0x0200    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）
     #define TICK_KEEPDOWN               0x4000    //判断按住不放用，按下以后需要持续多久
     #define TICK_KEEPDOWN_NEXT          0x0500    //按住不放的时候，每隔多久自动触发一次按住不放的事件
 
@@ -50,7 +53,10 @@
                 // 分钟++
                 DISPLAY_SetMinuteAdd();
                 break;
-            
+            case DISP_MODE_ANI_SCROLL_LEFT:
+                // 不响应
+                break;
+                
             default:
                 DISPLAY_ShowMMDD_forAWhile(100);
                 break;
@@ -119,9 +125,13 @@
                 // 分钟--
                 DISPLAY_SetMinuteMinus();
                 break;
+            case DISP_MODE_ANI_SCROLL_LEFT:
+                // 不响应
+                break;
 
             default:
-                DISPLAY_ShowYYYY_forAWhile(100);
+                // 温度
+                DISPLAY_ShowTempreture_forAWhile(100);
                 break;
         }
     }
@@ -278,37 +288,39 @@ void keyScanCommon(uchar btnUpDown,
         }
     }
 
-    // 按键按下 且 等待双击事件开始状态：【单击结束后并在一定时间内再次按下】
-    else if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_DBCLICK_START){
-        delay_ms(1);
-        if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_DBCLICK_START){
-            // 进入等待双击完成状态
-            ttWaitKeyDBClickEnd[btnIdx] = 0;
-            btnStatus[btnIdx] = STS_WAIT_DBCLICK_END;
-        }
-    }
-
-    // 按键按下 且 为等待双击完成状态：【双击的第二次按键按下后并保持中】
-    else if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_DBCLICK_END){
-        // 计数(最大255)
-        if (ttWaitKeyDBClickEnd[btnIdx] < 0xffff) {ttWaitKeyDBClickEnd[btnIdx]++;}
-    }
-
-    // 按键松开 且 为等待双击完成状态：【双击的第二次按键刚刚松开】
-    else if (btnUpDown == KEY_UP && btnStatus[btnIdx] == STS_WAIT_DBCLICK_END){
-        delay_ms(1);
-        if (btnUpDown == KEY_UP && btnStatus[btnIdx] == STS_WAIT_DBCLICK_END){
-            
-            // 如果第二次按键按下并松开的时间间隔已经超过了一次有效单击要求的最大间隔，视为无效双击操作，丢弃，重新等待
-            if (ttWaitKeyDBClickEnd[btnIdx] > TICK_WAIT_CLICK_END)
-            {
-                btnStatus[btnIdx] = STS_WAIT_CLICK_START;
-            }
-            // 反之，不再继续期待三击事件，调用双击回调函数（如有必要响应三击甚至更多连击事件，跟单击等待双击一样追加相关标志位和等待逻辑即可）
-            else {
-                btnStatus[btnIdx] = STS_WAIT_CLICK_START;
-                if (fnDBClick != 0) fnDBClick();
+    #ifndef NOT_USE_DBCLICK
+        // 按键按下 且 等待双击事件开始状态：【单击结束后并在一定时间内再次按下】
+        else if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_DBCLICK_START){
+            delay_ms(1);
+            if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_DBCLICK_START){
+                // 进入等待双击完成状态
+                ttWaitKeyDBClickEnd[btnIdx] = 0;
+                btnStatus[btnIdx] = STS_WAIT_DBCLICK_END;
             }
         }
-    }
+
+        // 按键按下 且 为等待双击完成状态：【双击的第二次按键按下后并保持中】
+        else if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_DBCLICK_END){
+            // 计数(最大255)
+            if (ttWaitKeyDBClickEnd[btnIdx] < 0xffff) {ttWaitKeyDBClickEnd[btnIdx]++;}
+        }
+
+        // 按键松开 且 为等待双击完成状态：【双击的第二次按键刚刚松开】
+        else if (btnUpDown == KEY_UP && btnStatus[btnIdx] == STS_WAIT_DBCLICK_END){
+            delay_ms(1);
+            if (btnUpDown == KEY_UP && btnStatus[btnIdx] == STS_WAIT_DBCLICK_END){
+                
+                // 如果第二次按键按下并松开的时间间隔已经超过了一次有效单击要求的最大间隔，视为无效双击操作，丢弃，重新等待
+                if (ttWaitKeyDBClickEnd[btnIdx] > TICK_WAIT_CLICK_END)
+                {
+                    btnStatus[btnIdx] = STS_WAIT_CLICK_START;
+                }
+                // 反之，不再继续期待三击事件，调用双击回调函数（如有必要响应三击甚至更多连击事件，跟单击等待双击一样追加相关标志位和等待逻辑即可）
+                else {
+                    btnStatus[btnIdx] = STS_WAIT_CLICK_START;
+                    if (fnDBClick != 0) fnDBClick();
+                }
+            }
+        }
+    #endif
 }

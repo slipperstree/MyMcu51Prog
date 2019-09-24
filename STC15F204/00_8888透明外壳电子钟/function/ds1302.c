@@ -10,10 +10,6 @@
 
 	static idata uchar nian,yue,ri,shi,fen,miao;
 
-	//==============================================================================
-	//	DS1302初使化，增加了初使化标识
-	//	先读DS1302的标识，如果读出标识正确，则说明1302已经初使化过，不再初使化
-	//==============================================================================
 	void DS1302_init()
 	{
 		nian = 19;
@@ -25,9 +21,6 @@
 		miao = 50;
 	}
 
-	//=========================================================================
-	//        读时间
-	//=========================================================================
 	void DS1302_GetTimeFromDS1302()
 	{
 		miao++;
@@ -44,44 +37,26 @@
 		}}}}}
 	}
 
-	/*
-	传入十进制数据，自动转成BCD并写入DS1302
-	*/
 	void DS1302_WriteTime_Sec(uchar nonBcdData) {
 		miao = nonBcdData;
 	}
 
-	/*
-	传入十进制数据，自动转成BCD并写入DS1302
-	*/
 	void DS1302_WriteTime_Minute(uchar nonBcdData) {
 		fen = nonBcdData;
 	}
 
-	/*
-	传入十进制数据，自动转成BCD并写入DS1302
-	*/
 	void DS1302_WriteTime_Hour(uchar nonBcdData) {
 		shi = nonBcdData;
 	}
 
-	/*
-	传入十进制数据，自动转成BCD并写入DS1302
-	*/
 	void DS1302_WriteTime_Day(uchar nonBcdData) {
 		ri = nonBcdData;
 	}
 
-	/*
-	传入十进制数据，自动转成BCD并写入DS1302
-	*/
 	void DS1302_WriteTime_Month(uchar nonBcdData) {
 		yue = nonBcdData;
 	}
 
-	/*
-	传入十进制数据，自动转成BCD并写入DS1302
-	*/
 	void DS1302_WriteTime_Year(uchar nonBcdData) {
 		nian = nonBcdData;
 	}
@@ -106,7 +81,16 @@
 
 	static idata uchar alarm_shi;alarm_fen;
 	static idata uchar nian,yue,ri,shi,fen,miao;
-	static idata uchar alarm_shi;alarm_fen;
+
+	// 十进制数转BCD码
+	uchar dec2Bcd(uchar hexData){
+		return (hexData/10)<<4|(hexData%10);
+	}
+
+	// BCD码转十进制数
+	uchar bcd2Dec(uchar bcdData){
+		return ((bcdData>>4)*10) + (bcdData&0x0f);
+	}
 
 	/************************DS1302**********************/
 	void SendByte(unsigned char sdate)		  //单片机发送一位数据 
@@ -114,15 +98,11 @@
 		unsigned char i;
 		for(i=0;i<8;i++)
 		{
-			
-			if(sdate&0x01!=0)		  //从低位开始发送 
+			if(sdate&0x01!=0)		//从低位开始发送 
 			IO_DS1302=1;
 			else IO_DS1302=0;
 			SCLK_DS1302=0;
-	//		i=i;
-	//		i++;
-	//		i--;
-			SCLK_DS1302=1;					  //时钟上升沿1302接收一位数据 
+			SCLK_DS1302=1;			//时钟上升沿1302接收一位数据 
 			sdate=sdate>>1;
 		}
 		SCLK_DS1302=0;
@@ -140,8 +120,6 @@
 				tdate|=0x80;
 			}
 			SCLK_DS1302=1;
-	//		i++;
-	//		i--;
 			SCLK_DS1302=0;		  //时钟下降沿1302发送一位数据 
 		}
 		SCLK_DS1302=0;
@@ -281,23 +259,27 @@
 	void DS1302_GetTimeFromDS1302()
 	{
 		static idata uchar i=0,temp1;
-		unsigned char time_H,time_L,temp;
+		//unsigned char time_H,time_L,temp;
+		unsigned char temp;
 
 		switch(i)
 		{
 			case 0:    temp=ReadTime(0x8D);        //年
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				nian=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//nian=time_H+time_L;
+				nian=bcd2Dec(temp);
 				i++;
 				break;
 			case 1:    temp=ReadTime(0x89);        //月
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				yue=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//yue=time_H+time_L;
+				yue=bcd2Dec(temp);
 				i++;
 				break;
 			case 2:    temp=ReadTime(0x87);        //日
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				ri=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//ri=time_H+time_L;
+				ri=bcd2Dec(temp);
 				i++;
 				break;
 			case 3:    temp=ReadTime(0x85);        //时
@@ -311,18 +293,21 @@
 	//            {
 					temp&=0x3f;        //为24小时制
 	//            }
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				shi=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//shi=time_H+time_L;
+				shi=bcd2Dec(temp);
 				i++;
 				break;
 			case 4:    temp=ReadTime(0x83);        //分
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				fen=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//fen=time_H+time_L;
+				fen=bcd2Dec(temp);
 				i++;
 				break;
 			case 5:    temp=ReadTime(0x81);        //秒
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				miao=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//miao=time_H+time_L;
+				miao=bcd2Dec(temp);
 				i++;
 				break;
 			case 6:
@@ -348,18 +333,21 @@
 	//            {
 					temp&=0x3f;        //为24小时制
 	//            }
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				shi=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//shi=time_H+time_L;
+				shi=bcd2Dec(temp);
 				i++;
 				break;
 			case 8:    temp=ReadTime(0x83);        //分
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				fen=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//fen=time_H+time_L;
+				fen=bcd2Dec(temp);
 				i++;
 				break;
 			case 9:    temp=ReadTime(0x81);        //秒
-				time_H=(temp>>4)*10;time_L=temp&0x0f;
-				miao=time_H+time_L;
+				//time_H=(temp>>4)*10;time_L=temp&0x0f;
+				//miao=time_H+time_L;
+				miao=bcd2Dec(temp);
 				i++;
 				break;
 			case 10:
@@ -367,7 +355,6 @@
 				break;
 			default:i=0;break;
 		}
-	//    if((++i)>=6)i=0;
 	}
 
 	// 以下函数考虑了ds1302写入时需要写入BCD码，自动转换成BCD码再写入
@@ -379,11 +366,6 @@
 	//      再计算19除以10的余数，也就是个位数的9(0x09)
 	//      最后将两个数相或就可以了 0x10|0x09=0x19
 	// 目前这个时钟的硬件没有显示星期的功能，所以星期部分的数据丢弃不用
-
-	// 十进制数转BCD码
-	uchar dec2Bcd(uchar hexData){
-		return (hexData/10)<<4|(hexData%10);
-	}
 
 	/*
 	传入十进制数据，自动转成BCD并写入DS1302

@@ -11,7 +11,8 @@ enum EnumDispMode {
 	DISP_MODE_SET_MONTH,
 	DISP_MODE_SET_DAY,
 	DISP_MODE_SET_HOUR,
-	DISP_MODE_SET_MINUTE
+	DISP_MODE_SET_MINUTE,
+	DISP_MODE_TEMPRETURE
     };
 
 enum EnumSpeed {
@@ -52,6 +53,7 @@ void DISPLAY_ShowMMDD_forAWhile(int interval);
 void DISPLAY_ShowYYYY_forAWhile(int interval);
 // 显示一小会MMSS，然后切换回原来的显示状态
 void DISPLAY_ShowMMSS_forAWhile(int interval);
+void DISPLAY_ShowTempreture_forAWhile(int interval);
 
 // 显示一段向左滚动的文字
 void DISPLAY_ShowAniScrollLeft(

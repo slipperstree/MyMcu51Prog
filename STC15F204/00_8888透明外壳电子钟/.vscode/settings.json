@@ -4,6 +4,12 @@
         "common.h": "c",
         "stc15104e.h": "c",
         "display.h": "c",
-        "ds1302.h": "c"
-    }
+        "ds1302.h": "c",
+        "uart.h": "c",
+        "sensoradc.h": "c",
+        "string.h": "c"
+    },
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.pydocstyleEnabled": false
 }

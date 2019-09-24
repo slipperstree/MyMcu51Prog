@@ -2,443 +2,448 @@
 #include "../header/ds1302.h"
 #include "../header/common.h"
 
-#if 0
 #define FOSC 11059200L      //System frequency
 #define BAUD 9600           //UART baudrate
 
 #define HARDWARE_UART    0
 #define SOFTWARE_UART    1
+#define DUMMY_UART       3  //只定义了对外的接口保证编译通过，没有功能
 
 // 硬件串口和软件串口可指定（如果使用软串口会占用定时器0）
-#define UART_TYPE SOFTWARE_UART
+#define UART_TYPE DUMMY_UART
 
-#if (UART_TYPE == HARDWARE_UART)
-
-	/*Define UART parity mode*/
-	#define NONE_PARITY     0   //None parity
-	#define ODD_PARITY      1   //Odd parity
-	#define EVEN_PARITY     2   //Even parity
-	#define MARK_PARITY     3   //Mark parity
-	#define SPACE_PARITY    4   //Space parity
-
-	#define PARITYBIT NONE_PARITY   //Testing even parity
-
-	bit busy;
-#elif (UART_TYPE == SOFTWARE_UART)
-	//BAUD_TL = 65536 - FOSC/3/BAUDRATE/M (1T:M=1; 12T:M=12)
-	//NOTE: (FOSC/3/BAUDRATE) must be greater then 98, (RECOMMEND GREATER THEN 110)
-
-	//波特率 软件串口本来误差就较大，推荐使用11.0592M的晶振
-	//#define BAUD_TL  0xF400                  // 1200bps @ 11.0592MHz
-	//#define BAUD_TL  0xFA00                  // 2400bps @ 11.0592MHz
-	//#define BAUD_TL  0xFD00                  // 4800bps @ 11.0592MHz
-	//#define BAUD_TL  0xFE80                  // 9600bps @ 11.0592MHz
-	//#define BAUD_TL  0xFF40                  //19200bps @ 11.0592MHz
-	//#define BAUD_TL  0xFFA0                  //38400bps @ 11.0592MHz
-
-	//define UART TX/RX port
-	//本制作的硬件上P30和P31被两个按钮占用了，为了避免冲突，软串口必须换成别的IO口
-	//sbit RXB = P3^0;
-	//sbit TXB = P3^1;
-	sbit RXB = P3^6;
-	sbit TXB = P3^7;
-
-	typedef bit BOOL;
-	typedef unsigned char BYTE;
-	typedef unsigned int WORD;
-
-	static BYTE TBUF,RBUF;
-	static BYTE TDAT,RDAT;
-	static BYTE TCNT,RCNT;
-	static BYTE TBIT,RBIT;
-	static BOOL TING,RING;
-	static BOOL TEND,REND;
-
-	#define SEND_BUFF_SIZE  32
-	// idata : 一般的变量(data，隐式)只能访问片内RAM的低128字节内存超过128个字节
-	// 超过128字节就不允许定义一般的变量而需要显式使用idata后就可以访问片内RAM高128个字节了
-	// 写这个程序时使用的单片机只有片内的256字节没有外部RAM，所以不可以使用xdata，只能使用idata
-	static idata uchar sendBuf[SEND_BUFF_SIZE];  
-	static BYTE t, r;
-#endif
-
-static uchar rcvChar;
-static uchar bufS[3];
-static uchar bufE[3];
-
-#define UART_STS_CHK_HEAD     0
-#define UART_STS_RCV_BODY     1
-#define UART_STS_CHK_FOOT     2
-#define UART_HEAD_CMD     'S' // 定义命令消息头 [S]
-#define UART_HEAD_TXT     'T' // 定义文本消息头 [T]
-
-static uchar uartStatus = UART_STS_CHK_HEAD;
-static uchar checkHead_len = 0;
-static uchar checkFoot_len = 0;
-static uchar uartHead = 0x00;
-
-// 32个ascii，加1是用来保存字符串结束符号'\0' (0x00)用的
-#define RCV_BUFF_SIZE 32
-static uchar strBuff[RCV_BUFF_SIZE+1];
-// 已经接收到的字符数，用于检测是否超过范围
-static uchar rcvCharCnt = 0;
-
-void rcvCharProc(uchar rcvChar);
-void doMessage(uchar);
-void doCommand(uchar);
-
-void UART_init()
-{
+#if (UART_TYPE == DUMMY_UART)
+	void UART_init(){}
+	void UART_SoftUartIsr(){}
+	void UART_SendByte(unsigned char dat){}
+	void UART_SendString(unsigned char *s){}
+#else
 	#if (UART_TYPE == HARDWARE_UART)
-		#if (PARITYBIT == NONE_PARITY)
-			SCON = 0x50;            //8-bit variable UART
-		#elif (PARITYBIT == ODD_PARITY) || (PARITYBIT == EVEN_PARITY) || (PARITYBIT == MARK_PARITY)
-			SCON = 0xda;            //9-bit variable UART, parity bit initial to 1
-		#elif (PARITYBIT == SPACE_PARITY)
-			SCON = 0xd2;            //9-bit variable UART, parity bit initial to 0
-		#endif
 
-		EA = 0;
+		/*Define UART parity mode*/
+		#define NONE_PARITY     0   //None parity
+		#define ODD_PARITY      1   //Odd parity
+		#define EVEN_PARITY     2   //Even parity
+		#define MARK_PARITY     3   //Mark parity
+		#define SPACE_PARITY    4   //Space parity
 
-		AUXR = 0x40;        //定时器1为1T模式
-		TMOD &= 0x0F;		//清除定时器1模式位
-		TMOD |= 0x20;		//设定定时器1为模式2(8位自动重载)
+		#define PARITYBIT NONE_PARITY   //Testing even parity
 
-		TH1 = TL1 = -(FOSC/12/32/BAUD); //settingMode auto-reload vaule
-		ET1 = 0;			//禁止定时器1中断
-
-		ES = 1;             //使能串口中断
-		TR1 = 1;            //定时器1开始工作
-		EA = 1;             //使能总中断
+		bit busy;
 	#elif (UART_TYPE == SOFTWARE_UART)
-		TING = 0;
-		RING = 0;
-		TEND = 1;
-		REND = 0;
-		TCNT = 0;
-		RCNT = 0;
-
-		TMOD = 0x00;                        //timer0 in 16-bit auto reload mode
-		AUXR = 0x80;                        //timer0 working at 1T mode
-
 		//BAUD_TL = 65536 - FOSC/3/BAUDRATE/M (1T:M=1; 12T:M=12)
-		//TL0 = BAUD_TL;
-		//TH0 = BAUD_TL>>8;                      //initial timer0 and set reload value
-		TL0 = 65536 - (FOSC/BAUD/3);
-		TH0 = (65536 - (FOSC/BAUD/3))>>8;
+		//NOTE: (FOSC/3/BAUDRATE) must be greater then 98, (RECOMMEND GREATER THEN 110)
 
-		TR0 = 1;                            //tiemr0 start running
-		ET0 = 1;                            //enable timer0 interrupt
-		PT0 = 1;                            //improve timer0 interrupt priority
-		EA = 1;                             //open global interrupt switch
+		//波特率 软件串口本来误差就较大，推荐使用11.0592M的晶振
+		//#define BAUD_TL  0xF400                  // 1200bps @ 11.0592MHz
+		//#define BAUD_TL  0xFA00                  // 2400bps @ 11.0592MHz
+		//#define BAUD_TL  0xFD00                  // 4800bps @ 11.0592MHz
+		//#define BAUD_TL  0xFE80                  // 9600bps @ 11.0592MHz
+		//#define BAUD_TL  0xFF40                  //19200bps @ 11.0592MHz
+		//#define BAUD_TL  0xFFA0                  //38400bps @ 11.0592MHz
+
+		//define UART TX/RX port
+		//本制作的硬件上P30和P31被两个按钮占用了，为了避免冲突，软串口必须换成别的IO口
+		//sbit RXB = P3^0;
+		//sbit TXB = P3^1;
+		sbit RXB = P3^6;
+		sbit TXB = P3^7;
+
+		typedef bit BOOL;
+		typedef unsigned char BYTE;
+		typedef unsigned int WORD;
+
+		static BYTE TBUF,RBUF;
+		static BYTE TDAT,RDAT;
+		static BYTE TCNT,RCNT;
+		static BYTE TBIT,RBIT;
+		static BOOL TING,RING;
+		static BOOL TEND,REND;
+
+		#define SEND_BUFF_SIZE  32
+		// idata : 一般的变量(data，隐式)只能访问片内RAM的低128字节内存超过128个字节
+		// 超过128字节就不允许定义一般的变量而需要显式使用idata后就可以访问片内RAM高128个字节了
+		// 写这个程序时使用的单片机只有片内的256字节没有外部RAM，所以不可以使用xdata，只能使用idata
+		static idata uchar sendBuf[SEND_BUFF_SIZE];  
+		static BYTE t, r;
 	#endif
-}
 
-#if (UART_TYPE == HARDWARE_UART)
-	/*********************************************************
-		串行中断服务函数（不需要在main函数里循环调用）
-	*********************************************************/
-	void Hard_Uart_Isr() interrupt 4
+	static uchar rcvChar;
+	static uchar bufS[3];
+	static uchar bufE[3];
+
+	#define UART_STS_CHK_HEAD     0
+	#define UART_STS_RCV_BODY     1
+	#define UART_STS_CHK_FOOT     2
+	#define UART_HEAD_CMD     'S' // 定义命令消息头 [S]
+	#define UART_HEAD_TXT     'T' // 定义文本消息头 [T]
+
+	static uchar uartStatus = UART_STS_CHK_HEAD;
+	static uchar checkHead_len = 0;
+	static uchar checkFoot_len = 0;
+	static uchar uartHead = 0x00;
+
+	// 32个ascii，加1是用来保存字符串结束符号'\0' (0x00)用的
+	#define RCV_BUFF_SIZE 32
+	static uchar strBuff[RCV_BUFF_SIZE+1];
+	// 已经接收到的字符数，用于检测是否超过范围
+	static uchar rcvCharCnt = 0;
+
+	void rcvCharProc(uchar rcvChar);
+	void doMessage(uchar);
+	void doCommand(uchar);
+
+	void UART_init()
 	{
-		ES = 0;			//关闭串行中断
+		#if (UART_TYPE == HARDWARE_UART)
+			#if (PARITYBIT == NONE_PARITY)
+				SCON = 0x50;            //8-bit variable UART
+			#elif (PARITYBIT == ODD_PARITY) || (PARITYBIT == EVEN_PARITY) || (PARITYBIT == MARK_PARITY)
+				SCON = 0xda;            //9-bit variable UART, parity bit initial to 1
+			#elif (PARITYBIT == SPACE_PARITY)
+				SCON = 0xd2;            //9-bit variable UART, parity bit initial to 0
+			#endif
 
-		if (TI)
-		{
-			TI = 0;             //Clear transmit interrupt flag
-			busy = 0;           //Clear transmit busy flag
-		}
-		if (RI)
-		{
-			rcvChar = SBUF;	//从串口缓冲区取得数据
-			RI = 0;		//清除串行接受标志位
+			EA = 0;
 
-			rcvCharProc(rcvChar);
-		}
+			AUXR = 0x40;        //定时器1为1T模式
+			TMOD &= 0x0F;		//清除定时器1模式位
+			TMOD |= 0x20;		//设定定时器1为模式2(8位自动重载)
 
-		ES = 1;			//恢复串口中断
-	}
+			TH1 = TL1 = -(FOSC/12/32/BAUD); //settingMode auto-reload vaule
+			ET1 = 0;			//禁止定时器1中断
 
-	void UART_SendString(uchar *s)
-	{
-		//TODO
-	}
-
-#elif (UART_TYPE == SOFTWARE_UART)
-	/*********************************************************
-		串行软服务函数（需要在main函数里循环调用）
-	*********************************************************/
-	void UART_SoftUartIsr()
-	{
-		if (REND)
-        {
-			rcvCharProc(RBUF);
-			
+			ES = 1;             //使能串口中断
+			TR1 = 1;            //定时器1开始工作
+			EA = 1;             //使能总中断
+		#elif (UART_TYPE == SOFTWARE_UART)
+			TING = 0;
+			RING = 0;
+			TEND = 1;
 			REND = 0;
-        }
-        if (TEND)
-        {
-			if (r != t)
+			TCNT = 0;
+			RCNT = 0;
+
+			TMOD = 0x00;                        //timer0 in 16-bit auto reload mode
+			AUXR = 0x80;                        //timer0 working at 1T mode
+
+			//BAUD_TL = 65536 - FOSC/3/BAUDRATE/M (1T:M=1; 12T:M=12)
+			//TL0 = BAUD_TL;
+			//TH0 = BAUD_TL>>8;                      //initial timer0 and set reload value
+			TL0 = 65536 - (FOSC/BAUD/3);
+			TH0 = (65536 - (FOSC/BAUD/3))>>8;
+
+			TR0 = 1;                            //tiemr0 start running
+			ET0 = 1;                            //enable timer0 interrupt
+			PT0 = 1;                            //improve timer0 interrupt priority
+			EA = 1;                             //open global interrupt switch
+		#endif
+	}
+
+	#if (UART_TYPE == HARDWARE_UART)
+		/*********************************************************
+			串行中断服务函数（不需要在main函数里循环调用）
+		*********************************************************/
+		void Hard_Uart_Isr() interrupt 4
+		{
+			ES = 0;			//关闭串行中断
+
+			if (TI)
 			{
-				TEND = 0;
-				TBUF = sendBuf[t++ & 0x1f];
-				TING = 1;
-				// if (t >= SEND_BUFF_SIZE || buf[t] == 0x00)
-				// {
-				// 	// 如果到达缓冲区域上限或者到达字符串的尾部0x00则不再继续发送，并将t计数器归零
-				// 	t = 0;
-				// } else {
-				// 	// 通知定时器0发送下一个字符
-				// 	TING = 1;
-				// }
+				TI = 0;             //Clear transmit interrupt flag
+				busy = 0;           //Clear transmit busy flag
 			}
-        }
-	}
-
-	void UART_SendByte(BYTE dat)
-	{
-		sendBuf[r++ & 0x1f] = dat;
-	}
-
-	void UART_SendString(uchar *s)
-	{
-		while (*s)              //Check the end of the string
-		{
-			UART_SendByte(*s++);     //Send current char and increment string ptr
-		}
-	}
-
-	// 定时器0 模拟串口服务子函数
-	void tm0() interrupt 1 using 1
-	{
-		if (RING)
-		{
-			if (--RCNT == 0)
+			if (RI)
 			{
-				RCNT = 3;                   //reset send baudrate counter
-				if (--RBIT == 0)
+				rcvChar = SBUF;	//从串口缓冲区取得数据
+				RI = 0;		//清除串行接受标志位
+
+				rcvCharProc(rcvChar);
+			}
+
+			ES = 1;			//恢复串口中断
+		}
+
+		void UART_SendString(uchar *s)
+		{
+			//TODO
+		}
+
+	#elif (UART_TYPE == SOFTWARE_UART)
+		/*********************************************************
+			串行软服务函数（需要在main函数里循环调用）
+		*********************************************************/
+		void UART_SoftUartIsr()
+		{
+			if (REND)
+			{
+				rcvCharProc(RBUF);
+				
+				REND = 0;
+			}
+			if (TEND)
+			{
+				if (r != t)
 				{
-					RBUF = RDAT;            //save the data to RBUF
-					RING = 0;               //stop receive
-					REND = 1;               //set receive completed flag
-				}
-				else
-				{
-					RDAT >>= 1;
-					if (RXB) RDAT |= 0x80;  //shift RX data to RX buffer
+					TEND = 0;
+					TBUF = sendBuf[t++ & 0x1f];
+					TING = 1;
+					// if (t >= SEND_BUFF_SIZE || buf[t] == 0x00)
+					// {
+					// 	// 如果到达缓冲区域上限或者到达字符串的尾部0x00则不再继续发送，并将t计数器归零
+					// 	t = 0;
+					// } else {
+					// 	// 通知定时器0发送下一个字符
+					// 	TING = 1;
+					// }
 				}
 			}
 		}
-		else if (!RXB)
+
+		void UART_SendByte(BYTE dat)
 		{
-			RING = 1;                       //set start receive flag
-			RCNT = 4;                       //initial receive baudrate counter
-			RBIT = 9;                       //initial receive bit number (8 data bits + 1 stop bit)
+			sendBuf[r++ & 0x1f] = dat;
 		}
 
-		if (--TCNT == 0)
+		void UART_SendString(uchar *s)
 		{
-			TCNT = 3;                       //reset send baudrate counter
-			if (TING)                       //judge whether sending
+			while (*s)              //Check the end of the string
 			{
-				if (TBIT == 0)
+				UART_SendByte(*s++);     //Send current char and increment string ptr
+			}
+		}
+
+		// 定时器0 模拟串口服务子函数
+		void tm0() interrupt 1 using 1
+		{
+			if (RING)
+			{
+				if (--RCNT == 0)
 				{
-					TXB = 0;                //send start bit
-					TDAT = TBUF;            //load data from TBUF to TDAT
-					TBIT = 9;               //initial send bit number (8 data bits + 1 stop bit)
-				}
-				else
-				{
-					TDAT >>= 1;             //shift data to CY
-					if (--TBIT == 0)
+					RCNT = 3;                   //reset send baudrate counter
+					if (--RBIT == 0)
 					{
-						TXB = 1;
-						TING = 0;           //stop send
-						TEND = 1;           //set send completed flag
+						RBUF = RDAT;            //save the data to RBUF
+						RING = 0;               //stop receive
+						REND = 1;               //set receive completed flag
 					}
 					else
 					{
-						TXB = CY;           //write CY to TX port
+						RDAT >>= 1;
+						if (RXB) RDAT |= 0x80;  //shift RX data to RX buffer
+					}
+				}
+			}
+			else if (!RXB)
+			{
+				RING = 1;                       //set start receive flag
+				RCNT = 4;                       //initial receive baudrate counter
+				RBIT = 9;                       //initial receive bit number (8 data bits + 1 stop bit)
+			}
+
+			if (--TCNT == 0)
+			{
+				TCNT = 3;                       //reset send baudrate counter
+				if (TING)                       //judge whether sending
+				{
+					if (TBIT == 0)
+					{
+						TXB = 0;                //send start bit
+						TDAT = TBUF;            //load data from TBUF to TDAT
+						TBIT = 9;               //initial send bit number (8 data bits + 1 stop bit)
+					}
+					else
+					{
+						TDAT >>= 1;             //shift data to CY
+						if (--TBIT == 0)
+						{
+							TXB = 1;
+							TING = 0;           //stop send
+							TEND = 1;           //set send completed flag
+						}
+						else
+						{
+							TXB = CY;           //write CY to TX port
+						}
 					}
 				}
 			}
 		}
-	}
-#endif
+	#endif
 
-void rcvCharProc(uchar rcvChar) {
-	// 这里定义了一个消息的协议：
-	// 消息分<命令消息>和<文本消息>两种。
-	// <命令消息>
-	// 		三个字节的消息头[S] + 一个字节的消息体(内容任意)    (如 [S]1)
-	//		接收到命令消息后，会调用doCommand函数，并将消息体的1个字节作为参数传给该函数。
-	//		补充：形如 [S][S]8 这种误码，并不会解析成消息"8"，而是会解析成消息"["，后面的 "S]8" 会被丢弃 
-	// <文本消息> (多字节消息，也可用于发送数据)
-	//		三个字节的消息头[T] + 最多32个字节的消息体(内容任意)+ 一个字节的消息结束标识@
-	//		接收到文本消息时在遇到结束符@之前会将接受到的char存入strBuff缓冲区。
-	//		一直到遇到结束符@ 或者 达到缓冲区大小上限32位 会停止接收并调用doMessage函数，并将接收到的消息体的字节个数作为参数传给该函数。
-	//      在该函数内可根据需要读取缓冲区的内容。
+	void rcvCharProc(uchar rcvChar) {
+		// 这里定义了一个消息的协议：
+		// 消息分<命令消息>和<文本消息>两种。
+		// <命令消息>
+		// 		三个字节的消息头[S] + 一个字节的消息体(内容任意)    (如 [S]1)
+		//		接收到命令消息后，会调用doCommand函数，并将消息体的1个字节作为参数传给该函数。
+		//		补充：形如 [S][S]8 这种误码，并不会解析成消息"8"，而是会解析成消息"["，后面的 "S]8" 会被丢弃 
+		// <文本消息> (多字节消息，也可用于发送数据)
+		//		三个字节的消息头[T] + 最多32个字节的消息体(内容任意)+ 一个字节的消息结束标识@
+		//		接收到文本消息时在遇到结束符@之前会将接受到的char存入strBuff缓冲区。
+		//		一直到遇到结束符@ 或者 达到缓冲区大小上限32位 会停止接收并调用doMessage函数，并将接收到的消息体的字节个数作为参数传给该函数。
+		//      在该函数内可根据需要读取缓冲区的内容。
 
-	if (uartStatus == UART_STS_CHK_HEAD) {
-		// 每接收到一个字节首先检查是不是消息头的前导字符 [
-		if (rcvChar == '[') {
-			uartStatus = UART_STS_CHK_HEAD;
-			checkHead_len = 1;
-			//SBUF = '('; //打印给串口调试用
-			
-			// 上一个消息体的字符数清0
-			rcvCharCnt = 0;
-		}
-		else if (checkHead_len == 1 && ( 
-					rcvChar == UART_HEAD_CMD ||
-					rcvChar == UART_HEAD_TXT
-					)
-				)
-		{
-			checkHead_len = 2;
-			uartHead = rcvChar;
-			//SBUF = rcvChar; //打印给串口调试用
-		}
-		else if (checkHead_len == 2 && rcvChar == ']') {
-			uartStatus = UART_STS_RCV_BODY; //协议头检查成功，开始接受消息体
-			checkHead_len = 0;
-			//SBUF = ')'; //打印给串口调试用
-
-		} else {
-			// 消息头中途检测失败，比如[S的后面不是]而是别的字符，则判断失败
-			// 需要从头开始判断
-			checkHead_len = 0;
-		}
-	}
-	else if (uartStatus == UART_STS_RCV_BODY) {
-		//SBUF = rcvChar; //打印给串口调试用
-
-		switch(uartHead)
-		{
-			case UART_HEAD_CMD:
-				// 命令模式下，只使用紧跟着head的第一个字节，后面的字节丢弃（如果包含有效head则视为新消息处理）
-				// 继续回到检查下一个head的状态
+		if (uartStatus == UART_STS_CHK_HEAD) {
+			// 每接收到一个字节首先检查是不是消息头的前导字符 [
+			if (rcvChar == '[') {
 				uartStatus = UART_STS_CHK_HEAD;
+				checkHead_len = 1;
+				//SBUF = '('; //打印给串口调试用
+				
+				// 上一个消息体的字符数清0
+				rcvCharCnt = 0;
+			}
+			else if (checkHead_len == 1 && ( 
+						rcvChar == UART_HEAD_CMD ||
+						rcvChar == UART_HEAD_TXT
+						)
+					)
+			{
+				checkHead_len = 2;
+				uartHead = rcvChar;
+				//SBUF = rcvChar; //打印给串口调试用
+			}
+			else if (checkHead_len == 2 && rcvChar == ']') {
+				uartStatus = UART_STS_RCV_BODY; //协议头检查成功，开始接受消息体
+				checkHead_len = 0;
+				//SBUF = ')'; //打印给串口调试用
 
-				// 调用命令处理函数
-				doCommand(rcvChar);
-				break;
+			} else {
+				// 消息头中途检测失败，比如[S的后面不是]而是别的字符，则判断失败
+				// 需要从头开始判断
+				checkHead_len = 0;
+			}
+		}
+		else if (uartStatus == UART_STS_RCV_BODY) {
+			//SBUF = rcvChar; //打印给串口调试用
 
-			case UART_HEAD_TXT:
-				// 文字消息模式下，接收到的字符存入缓冲区，接收完成后做处理
-				// 注意，这里不可以收到一个就向显示设备发送一个,显示部分比较耗时，会导致部分串口数据丢失
-				// 循环往复直到32个文字接收满了为止
-				// 但有可能发送的文字书小于32，但接受方没法知道发送文字的总数（通过制定协议可以解决），
-				// 故，本程序中满足下列2个条件之一就停止接收，将已接收到的内容显示出去并回到检查head的状态
-				// 1 - 接收到结束位@
-				// 2 - 已接受满32个字节，强制停止接收
-				if ( rcvChar == '@' || rcvCharCnt >= RCV_BUFF_SIZE )
-				{
-					// 收到结束位，停止接收，开始处理接收完的消息  @本身不放入消息缓冲区
-					// 末尾加上字符串的结束符号
-    				strBuff[rcvCharCnt] = 0x00;
-
-					doMessage(rcvCharCnt);
-
-					// 字符数清0
-					rcvCharCnt = 0;
-
-					// 切回接收新消息模式
-					checkHead_len = 0;
+			switch(uartHead)
+			{
+				case UART_HEAD_CMD:
+					// 命令模式下，只使用紧跟着head的第一个字节，后面的字节丢弃（如果包含有效head则视为新消息处理）
+					// 继续回到检查下一个head的状态
 					uartStatus = UART_STS_CHK_HEAD;
 
-				} else {
-					// 不是结束位，继续将收到的字节放入缓冲区
-					strBuff[rcvCharCnt++] = rcvChar;
-				}
-				break;
-			default:
-				break;
+					// 调用命令处理函数
+					doCommand(rcvChar);
+					break;
+
+				case UART_HEAD_TXT:
+					// 文字消息模式下，接收到的字符存入缓冲区，接收完成后做处理
+					// 注意，这里不可以收到一个就向显示设备发送一个,显示部分比较耗时，会导致部分串口数据丢失
+					// 循环往复直到32个文字接收满了为止
+					// 但有可能发送的文字书小于32，但接受方没法知道发送文字的总数（通过制定协议可以解决），
+					// 故，本程序中满足下列2个条件之一就停止接收，将已接收到的内容显示出去并回到检查head的状态
+					// 1 - 接收到结束位@
+					// 2 - 已接受满32个字节，强制停止接收
+					if ( rcvChar == '@' || rcvCharCnt >= RCV_BUFF_SIZE )
+					{
+						// 收到结束位，停止接收，开始处理接收完的消息  @本身不放入消息缓冲区
+						// 末尾加上字符串的结束符号
+						strBuff[rcvCharCnt] = 0x00;
+
+						doMessage(rcvCharCnt);
+
+						// 字符数清0
+						rcvCharCnt = 0;
+
+						// 切回接收新消息模式
+						checkHead_len = 0;
+						uartStatus = UART_STS_CHK_HEAD;
+
+					} else {
+						// 不是结束位，继续将收到的字节放入缓冲区
+						strBuff[rcvCharCnt++] = rcvChar;
+					}
+					break;
+				default:
+					break;
+			}
 		}
 	}
-}
 
-void doCommand(uchar cmd){
-    // 这里做业务判断处理
-    switch(cmd)
-    {
-        case 'R':
-			// 收到命令【R】进行软复位
-			// 实现不用冷启动下载程序，需要配合STC-ISP软件的相关功能一起使用，调试程序很方便。
-			// 		STC-ISP烧录软件那边的设置方法：
-			// 			左侧中部的标签栏向右切换，找到【收到用户命令后复位到ISP监控程序区】
-			// 			设置好串口的波特率，并在自定义命令里输入【5b535d52】( 即命令消息 [S]R )
-			// 			然后勾选两个复选框，可以达到每次只要编译成功就会自动发送命令消息让单片机进行软复位并开始下载。
-			IAP_CONTR = 0x60;
-			break;
-        default:      break;    //接受到其它数据
-    }
-}
+	void doCommand(uchar cmd){
+		// 这里做业务判断处理
+		switch(cmd)
+		{
+			case 'R':
+				// 收到命令【R】进行软复位
+				// 实现不用冷启动下载程序，需要配合STC-ISP软件的相关功能一起使用，调试程序很方便。
+				// 		STC-ISP烧录软件那边的设置方法：
+				// 			左侧中部的标签栏向右切换，找到【收到用户命令后复位到ISP监控程序区】
+				// 			设置好串口的波特率，并在自定义命令里输入【5b535d52】( 即命令消息 [S]R )
+				// 			然后勾选两个复选框，可以达到每次只要编译成功就会自动发送命令消息让单片机进行软复位并开始下载。
+				IAP_CONTR = 0x60;
+				break;
+			default:      break;    //接受到其它数据
+		}
+	}
 
-void doMessage(uchar rcvCnt){
-	
-	unsigned char i=0;
-	unsigned char chkFlg=0;
-	char YY, MM, DD, W, hh, mm, ss;
+	void doMessage(uchar rcvCnt){
+		
+		unsigned char i=0;
+		unsigned char chkFlg=0;
+		char YY, MM, DD, W, hh, mm, ss;
 
-    // Do anything u want to do here -------
-    // 本程序预想的收到的校时消息格式
-    // YYYYMMDDWhhmmss
-    // 共15个字节 年4 月2 日2 星期1 小时2 分钟2 秒2
-	
-	// 测试用串口返回接受到的消息
-	UART_SendString(strBuff);
+		// Do anything u want to do here -------
+		// 本程序预想的收到的校时消息格式
+		// YYYYMMDDWhhmmss
+		// 共15个字节 年4 月2 日2 星期1 小时2 分钟2 秒2
+		
+		// 测试用串口返回接受到的消息
+		UART_SendString(strBuff);
 
-    // 首先检查收到的字符串长度是否等于15
-    if (rcvCnt != 15)
-    {
-    	// 不等于15 表示消息有误，丢弃不处理
+		// 首先检查收到的字符串长度是否等于15
+		if (rcvCnt != 15)
+		{
+			// 不等于15 表示消息有误，丢弃不处理
 
-    } else {
-    	// 检查各位是否都是数字，如果任何一位不是数字，表示消息有误，丢弃不处理
-    	chkFlg = 0;
-    	for (i = 0; i < rcvCnt; ++i)
-	    {
-	    	if (strBuff[i] < 0x30 || strBuff[i] > 0x39)
-	    	{
-	    		// 不是数字的字符
-	    		chkFlg = 1;
-	    		break;
-	    	}
-	    }
+		} else {
+			// 检查各位是否都是数字，如果任何一位不是数字，表示消息有误，丢弃不处理
+			chkFlg = 0;
+			for (i = 0; i < rcvCnt; ++i)
+			{
+				if (strBuff[i] < 0x30 || strBuff[i] > 0x39)
+				{
+					// 不是数字的字符
+					chkFlg = 1;
+					break;
+				}
+			}
 
-	    if (chkFlg == 1)
-	    {
-	    	// 非数字字符存在，消息有误，丢弃不处理
-	    } else {
+			if (chkFlg == 1)
+			{
+				// 非数字字符存在，消息有误，丢弃不处理
+			} else {
 
-	    	// 取各数据并转换成数字
-	    	// 0  2  4  6  8 9  11 13 (各位开始下标) 
-	    	// YY YY MM DD W hh mm ss
-	    	YY = (strBuff[2] -0x30) * 10 + (strBuff[3] -0x30);
-	    	MM = (strBuff[4] -0x30) * 10 + (strBuff[5] -0x30);
-	    	DD = (strBuff[6] -0x30) * 10 + (strBuff[7] -0x30);
-	    	W  = (strBuff[8] -0x30);
-	    	hh = (strBuff[9] -0x30) * 10 + (strBuff[10]-0x30);
-	    	mm = (strBuff[11]-0x30) * 10 + (strBuff[12]-0x30);
-	    	ss = (strBuff[13]-0x30) * 10 + (strBuff[14]-0x30);
+				// 取各数据并转换成数字
+				// 0  2  4  6  8 9  11 13 (各位开始下标) 
+				// YY YY MM DD W hh mm ss
+				YY = (strBuff[2] -0x30) * 10 + (strBuff[3] -0x30);
+				MM = (strBuff[4] -0x30) * 10 + (strBuff[5] -0x30);
+				DD = (strBuff[6] -0x30) * 10 + (strBuff[7] -0x30);
+				W  = (strBuff[8] -0x30);
+				hh = (strBuff[9] -0x30) * 10 + (strBuff[10]-0x30);
+				mm = (strBuff[11]-0x30) * 10 + (strBuff[12]-0x30);
+				ss = (strBuff[13]-0x30) * 10 + (strBuff[14]-0x30);
 
-	    	// 做校验
-	    	if (MM<1 || MM>12 || DD<1 || DD>31 || W<1 || W>7 || hh>23 || mm>59 || ss>59)
-	    	{
-	    		// 日期时间有误，丢弃
-	    	} else {
-				// 日期时间格式正确，写入时钟芯片，完成校时
-				DS1302_WriteTime_Sec(ss);
-				DS1302_WriteTime_Minute(mm);
-				DS1302_WriteTime_Hour(hh);
-				DS1302_WriteTime_Day(DD);
-				DS1302_WriteTime_Month(MM);
-				DS1302_WriteTime_Year(YY);
+				// 做校验
+				if (MM<1 || MM>12 || DD<1 || DD>31 || W<1 || W>7 || hh>23 || mm>59 || ss>59)
+				{
+					// 日期时间有误，丢弃
+				} else {
+					// 日期时间格式正确，写入时钟芯片，完成校时
+					DS1302_WriteTime_Sec(ss);
+					DS1302_WriteTime_Minute(mm);
+					DS1302_WriteTime_Hour(hh);
+					DS1302_WriteTime_Day(DD);
+					DS1302_WriteTime_Month(MM);
+					DS1302_WriteTime_Year(YY);
 
-                //SBUF = '#'; // 调试用，看到串口返回感叹号表示校时完成
-	    	}
-	    }
-    }
-}
-
+					//SBUF = '#'; // 调试用，看到串口返回感叹号表示校时完成
+				}
+			}
+		}
+	}
 #endif
