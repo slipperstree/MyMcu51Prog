@@ -55,11 +55,8 @@
 */
 
 /*头文件*/
-#include <intrins.h>
-#include <STC89C52.h>
-#define uint unsigned int
-#define uchar unsigned char
-#define NOP() _nop_()
+#include "./header/common.h"
+#include "./header/GT20L16S1Y.h"
 
 #define FOSC 32000000L      // 系统晶振频率
 #define SCROLL_SPEED 100    // 文字滚动速度（10-200）越小越快（将Timer2的定时初值修改的大一些，效果更明显，但是太快的话有最下面一行会相对较亮）
@@ -112,7 +109,7 @@ int nowShowTextPos=0;		// 当前显示第几个字（严格来说是第几个字节）
 
 // 一次性传给HC595用的64+16位的一整行数据（包括移位用的第五个汉字的缓冲区）
 uchar data row_data_buf[10];
-void HC595_Data_Send(uchar *p, uchar han, uchar offset);
+void HC595_Data_Send(uchar *p, uchar offset);
 
 // 左移函数 （包括从IC取最右边的一列数据，存入大buffer，同时更新当前偏移位置）
 void shiftLeft(void);
@@ -160,60 +157,11 @@ uchar ttPWM = 0;
 
 // 用于软PWM，控制亮度用 -----------------------------------------------------------------------------------
 
-void delay_ms(uchar n)
-{
-	uchar x,y;
-	for(x=n;x>0;x--)
-	{
-		for(y=5;y>0;y--);	
-	}
-}
 
-// 不使用字库芯片而使用固定文字时放开这一段，并修改程序里的 bufHZ 为 ziku_table
-// 取模软件，需要指定【阴码+顺向（高位在前）+行列式】的形式
-// uchar code ziku_table[]={
-// 0x00,0x30,0xC0,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x60,0x10,/*"[",0*/
-// 0x00,0x78,0x48,0x57,0x50,0x61,0x51,0x4A,0x4B,0x48,0x69,0x51,0x42,0x44,0x40,0x40,
-// 0x40,0x40,0x40,0xFE,0x80,0x20,0x20,0x20,0xFC,0x20,0x28,0x24,0x22,0x22,0xA0,0x40,/*"陈",1*/
-// 0x00,0xFF,0x01,0x01,0x01,0x7F,0x41,0x41,0x49,0x45,0x41,0x49,0x45,0x41,0x41,0x40,
-// 0x00,0xFE,0x00,0x00,0x00,0xFC,0x04,0x04,0x44,0x24,0x04,0x44,0x24,0x04,0x14,0x08,/*"雨",2*/
-// 0x00,0xFF,0x02,0x7A,0x4A,0x7A,0x00,0xFF,0x02,0x7A,0x4A,0x4A,0x7A,0x02,0x0A,0x04,
-// 0x20,0x20,0x20,0x7E,0x42,0x84,0x10,0x10,0x10,0x10,0x28,0x28,0x28,0x44,0x44,0x82,/*"歌",3*/
-// 0x00,0xC0,0x30,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x20,0xC0,/*"]",4*/
-// };
-
-// 测试用的字母A的16x8点阵
-// 可直接这样显示在画面上 -> setICDataToBuffer(ic_data_A, 16, 0);
-uchar code ic_data_A[] = {0x00,0xE0,0x9C,0x82,0x9C,0xE0,0x00,0x00,0x0F,0x00,0x00,0x00,0x00,0x00,0x0F,0x00};
-
-// 字库芯片定义 ###################################################################################
-sbit pCE        =P2^0;         // 片选
-sbit pSCLK      =P2^1;         // 时钟
-sbit pSI        =P2^2;         // 数据输入（单片机->字库芯片）
-sbit pSO        =P2^3;         // 数据输出（字库芯片->单片机）
-
-unsigned long addr;
-int idx = 0;
-uchar data ic_data[32];
-
-// 从芯片取当前文字当前偏移量下的完整点阵
-void readICDataToBuffer(uchar* str);
-// 从芯片取点阵的子函数
-uchar* getICData_ASCII_8x16(uchar ch);
-uchar* getICData_Hanzi_16x16(uchar* hz);
-
-// 从芯片取指定文字指定列的上下两个字节（用于位移）
-void getICData_Col(uchar* str, uchar colIdx, uchar* colData);
-
-// 芯片取到的数据转换成适合模块的数据格式并保存在大buffer中
-void setICDataToBuffer(uchar *pICData, uchar size, uchar pos);
-
-// 串口定义 ######################################################################################
 typedef unsigned char BYTE;
 typedef unsigned int WORD;
 
 #define BAUD 9600           //UART baudrate
-//#define BAUD 1200           //UART baudrate
 
 /*Define UART parity mode*/
 #define NONE_PARITY     0   //None parity
@@ -238,6 +186,9 @@ uchar serialRcvIdx=0;
 //test
 void testSetFullScreenByte(uchar);
 //test
+
+// 芯片取到的数据转换成适合模块的数据格式并保存在大buffer中
+void setICDataToBuffer(unsigned char *pICData, unsigned char size, unsigned char pos);
 
 // 虽然定义了Timer0但是main函数没有启用，目前还用不到，以后如果需要可以利用
 int ttTimer0 = 0;
@@ -293,10 +244,10 @@ void display(){
 			row_data_buf[i]=bufHZ[i*16 + rowIdx];
 		}
 		// 将上面取到的一整行数据串行输出给74HC595阵列，点亮当前行的数据
-		HC595_Data_Send(row_data_buf,rowIdx,nowShiftOffset);
+		HC595_Data_Send(row_data_buf,nowShiftOffset);
 
 		// HC138的行选择端口指向下一行
-		ABCD_port = (ABCD_port & 0xf0)|row;
+		ABCD_port = (ABCD_port & 0xf0)|rowIdx;
 	} 
 
 	// PWM亮度控制
@@ -378,320 +329,11 @@ void main()
 	}
 }
 
-// 将接收到的IC点阵数据存入缓冲区用于显示
-// pICData	- 接收到的点阵数组
-// size		- 点阵数组的大小。通常汉字为32字节，半角ASCII码为16字节。
-// pos		- 指定该点阵数据显示的开始位置(0-7)，以8位（列）为一个单位。会覆盖原来的数据。
-void setICDataToBuffer(uchar *pICData, uchar size, uchar pos)
-{
-	// ############# 从字库芯片GT20L16S1Y取出的点阵信息是竖置横列模式（例：字母A） ############# 
-	// 从字库芯片GT20L16S1Y取出的点阵信息是竖置横列模式，也就是以竖排为单位取到的数据
-	// ---- 下面从芯片取到的字母A的点阵数据 竖置横排的（而且是高位在下面，低位在上面） ---- 
-	//       B0	B1	B2	B3	B4	B5	B6	B7
-	// bit0  0	0	0	0	0	0	0	0
-	// bit1  0	0	0	●	0	0	0	0
-	// bit2  0	0	●	0	●	0	0	0
-	// bit3  0	0	●	0	●	0	0	0
-	// bit4  0	0	●	0	●	0	0	0
-	// bit5  0	●	0	0	0	●	0	0
-	// bit6  0	●	0	0	0	●	0	0
-	// bit7  0	●	●	●	●	●	0	0
-	//       B8	B9	B10	B11	B12	B13	B14	B15
-	// bit0  ●	0	0	0	0	0	●	0
-	// bit1  ●	0	0	0	0	0	●	0
-	// bit2  ●	0	0	0	0	0	●	0
-	// bit3  ●	0	0	0	0	0	●	0
-	// bit4  0	0	0	0	0	0	0	0
-	// bit5  0	0	0	0	0	0	0	0
-	// bit6  0	0	0	0	0	0	0	0
-	// bit7  0	0	0	0	0	0	0	0
-	// 而手头的这款点阵屏的驱动方式是行驱动，也就是每次扫描时需要传入一整行的点阵信息
-	// 所以需要把每次取到的点阵信息转存到横置竖排（也就是汉字取模软件中的“行列式”）形式的buf中去，
-	// 显示时从buf中取连续的一整行的8个字节的数据串行传入595用于扫描显示
-	// 而存放的坐标跟这个字所在的显示位置有关系，比如我们打算将上面这个A的点阵显示在屏幕的最左边
-	// 那么，转存以后应该是下面这个样子（右侧的数据省略）
-	// 也就是说要将取到的B0-B7的最高位组合成buf里的一个字节B0（字符A为例就是0x00）
-	// 将取到的B0-B7的次高位组合成buf里的字节B1（字符A为例就是0x10）
-	//     bit7 ---------------------- bit0
-	// B0	0	0	0	0	0	0	0	0
-	// B1	0	0	0	●	0	0	0	0
-	// B2	0	0	●	0	●	0	0	0
-	// B3	0	0	●	0	●	0	0	0
-	// B4	0	0	●	0	●	0	0	0
-	// B5	0	●	0	0	0	●	0	0
-	// B6	0	●	0	0	0	●	0	0
-	// B7	0	●	●	●	●	●	0	0
-	// B8	●	0	0	0	0	0	●	0
-	// B9	●	0	0	0	0	0	●	0
-	// B10	●	0	0	0	0	0	●	0
-	// B11	●	0	0	0	0	0	●	0
-	// B12	0	0	0	0	0	0	0	0
-	// B13	0	0	0	0	0	0	0	0
-	// B14	0	0	0	0	0	0	0	0
-	// B15	0	0	0	0	0	0	0	0
-
-	uchar bufByteIdx = 0;
-	uchar icByteIdx = 0;
-	
-	uchar* pTmpByteBufHZ;
-	
-	//clear target data
-	//memset(&bufHZ[pos*16], size, 0x00);
-	
-	switch(size){
-		case 32:
-			// 汉字
-			// 汉字的IC点阵数据16列X16行: 
-			// B0-B7 为POS+0区域的上8行数据，B16-B23为POS+0区域的下8行数据
-			// B8-B15为POS+1区域的上8行数据，B24-B31为POS+1区域的下8行数据
-			// 所以大buff的B0-B7   的数据从IC数据的B0-B7   中取出来（行列互换）
-			//     大buff的B8-B15  的数据从IC数据的B16-B23 中取出来（行列互换）
-			//     大buff的B16-B23 的数据从IC数据的B8-B15  中取出来（行列互换）
-			//     大buff的B24-B31 的数据从IC数据的B24-B31 中取出来（行列互换）
-			for (bufByteIdx=0; bufByteIdx<size; bufByteIdx++){
-				pTmpByteBufHZ = &(bufHZ[pos*16 + bufByteIdx]);
-				//display();//test
-				// 先清空目标字节
-				pTmpByteBufHZ[0] = 0x00;
-				
-				if(bufByteIdx < 8){
-					for (icByteIdx=0; icByteIdx<8; icByteIdx++){
-						// 每次给最低位赋值后左移一位，最后得到8位数据
-						pTmpByteBufHZ[0] <<= 1;
-						
-						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
-							// 如果ic的该位数据是1，则给缓冲字节最低位赋值1
-							pTmpByteBufHZ[0] |= 0x01;
-						} else {
-							// 否则赋值0
-							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
-						}
-					}
-				}
-				
-				if(bufByteIdx >= 8 && bufByteIdx < 16 ){
-					for (icByteIdx=16; icByteIdx<24; icByteIdx++){
-						pTmpByteBufHZ[0] <<= 1;
-						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
-							pTmpByteBufHZ[0] |= 0x01;
-						} else {
-							// 否则赋值0
-							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
-						}
-					}
-				}
-				
-				if(bufByteIdx >= 16 && bufByteIdx < 24 ){
-					for (icByteIdx=8; icByteIdx<16; icByteIdx++){
-						pTmpByteBufHZ[0] <<= 1;
-						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
-							pTmpByteBufHZ[0] |= 0x01;
-						} else {
-							// 否则赋值0
-							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
-						}
-					}
-				}
-				
-				if(bufByteIdx >= 24 && bufByteIdx < 32 ){
-					for (icByteIdx=24; icByteIdx<32; icByteIdx++){
-						pTmpByteBufHZ[0] <<= 1;
-						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
-							pTmpByteBufHZ[0] |= 0x01;
-						} else {
-							// 否则赋值0
-							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
-						}
-					}
-				}
-			}
-			break;
-		case 16:
-			// 半角ACSII符号
-			// 半角字符的IC点阵数据8列X16行: B0-B7为点阵的上8行数据，B8-B15为点阵的下8行数据（见上面的字符A的例子）
-			// 所以大buff的B0-B7 的数据从IC数据的B0-B7 中取出来（行列互换）
-			//   而大buff的B8-B15的数据从IC数据的B8-B15中取出来（行列互换）
-			for (bufByteIdx=0; bufByteIdx<size; bufByteIdx++){
-				//display();//test
-					
-				pTmpByteBufHZ = &(bufHZ[pos*16 + bufByteIdx]);
-				
-				// 先清空目标字节
-				pTmpByteBufHZ[0] = 0x00;
-				
-				if(bufByteIdx < 8){
-					for (icByteIdx=0; icByteIdx<8; icByteIdx++){
-						// 每次给最低位赋值后左移一位，最后得到8位数据
-						pTmpByteBufHZ[0] <<= 1;
-						
-						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
-							// 如果ic的该位数据是1，则给缓冲字节最低位赋值1
-							pTmpByteBufHZ[0] |= 0x01; // 0000 0001
-						} else {
-							// 否则赋值0，默认是0所以什么都不做
-							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
-						}
-					}
-				}
-				
-				if(bufByteIdx >= 8 && bufByteIdx < 16 ){
-					for (icByteIdx=8; icByteIdx<16; icByteIdx++){
-						// 每次给最低位赋值后左移一位，最后得到8位数据
-						pTmpByteBufHZ[0] <<= 1;
-						
-						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
-							// 如果ic的该位数据是1，则给缓冲字节最低位赋值1
-							pTmpByteBufHZ[0] |= 0x01; // 0000 0001
-						} else {
-							// 否则赋值0，默认是0所以什么都不做
-							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
-						}
-					}
-				}
-			}
-			break;
-		default:
-			break;
-	}
-	
-}
-
-// 暂时只支持最前面的8个字节的显示（8个半角或4个全角）
-void readICDataToBuffer(uchar* str){
-	uchar pos;
-	
-	// GB2312-80编码的编码范围是高位0xa1－0xfe，低位是 0xa1-0xfe ，
-	// 其中汉字范围为 0xb0a1 和 0xf7fe，如果只是简单地判断汉字，则只要查看高字节是否大于等于0xa1就可以了
-	for (pos=0; pos<8; pos++){
-		if (str[pos] >= 0x20 && str[pos] <= 0x7E) {
-			// 判定为半角ASCII码，调用ASCII码的取点阵函数并存放在当前的显示位置上
-			setICDataToBuffer(getICData_ASCII_8x16(str[pos]), 16, pos); 
-		} else {
-			// 判定为全角汉字（其实还有很多别的可能比如日文汉字，这里我们默认输入的字符串是GB2312编码）
-			// 调用汉字的取点阵函数并存放在当前的显示位置上
-			setICDataToBuffer(getICData_Hanzi_16x16(&str[pos]), 32, pos);
-			pos++;//由于汉字占两个字节，这里手动让循环变量跳过下一个字节
-		}
-	}
-}
-
-// 取得点阵数据
-// addr: 计算好的点阵数据的起始地址
-// size：从起始地址连续取多少字节的点阵数据，目前只支持16（ASCII码）和32（GB2312汉字）两种
-uchar* getICData(unsigned long addr, uchar size) {
-	
-	//init
-	pCE=1;
-	pSI=0;
-	pSCLK=0;
-	
-	//memset(ic_data, 32, 0x00);
-	
-	// 首先把片选信号（CS#）变为低
-	pCE=0;
-	
-	// 紧跟着的是通过串行数据输入引脚（SI）移位输入 1 个字节的命令字（03 h）
-	// 每一位在串行时钟（SCLK）上升沿被锁存。
-	for (idx = 0; idx<8; idx++){
-		pSCLK=0;
-		pSI=0x03<<idx & 0x80;
-		pSCLK=1;
-	}
-	
-	// 然后继续通过串行数据输入引脚（SI）移位输入 3 个字节的地址
-	// 每一位在串行时钟（SCLK）上升沿被锁存。
-	for (idx = 0; idx<24; idx++){
-		pSCLK=0;
-		pSI=addr<<idx & 0x800000;
-		
-		// For test break point
-		if(idx==23){
-			idx = 23;
-		}
-		
-		pSCLK=1;
-	}
-	
-	// 经过仔细调试发现，芯片返回数据的时间线跟官方文档有所出入
-	// 官方文档给出的时间线是传输完命令的最后一位以后的第一个SCLK的下降沿会从MO传回第一个字节的最高位，
-	// 实际上，在传输命令的最后一个上升沿的瞬间，MO就已经开始往回传数据了，然后紧接着就会在每个下降沿传回后面的数据
-	// 不知道为什么，但我手上的芯片确实如此，导致一开始总是缺少第一位数据
-	// 所以在下面的循环之前先取第一位的数据
-	
-	// 奇怪，用stc12c5a60s2时，时序又没有问题了，搞不懂。。。下面两句暂时不用了。。。
-	// 如果用了下面两句，表现为整个显示多网上位移一位。。。
-	//ic_data[0] = ic_data[0] | pSO;
-	//ic_data[0] <<= 1;
-	
-	// 然后芯片会将该地址的字节数据通过串行数据输出引脚（SO）移位输出，
-	// 每一位在串行时钟（SCLK）下降沿被移出。
-	// 由于第一位数据已经取过了，所以下面的循环从1而不是0开始
-	for (idx = 0; idx<8*size ; idx++){
-		pSCLK=0;
-		
-		// 每次产生下降沿，IC会继续返回一位点阵数据
-		// 取得这一位点阵数据存放在当前字节的最低位
-		// 注意，位赋值时不可以直接用或运算！！因为这种做法无法将原来的1改成0！！
-		//       结果就是屏幕上最后一行会出现无规则的点，这些点都是从数组范围以外位移进来并且没有被置为0的点。（pSO=0）
-		if (pSO == 0) {
-			ic_data[idx/8] &= 0xFE; // 1111 1110 
-		} else {
-			ic_data[idx/8] |= 0x01; // 0000 0001
-		}
-		
-		if(((idx+1)%8) > 0){
-			// 进行左移以空出最低位以便继续接受下一位数据
-			ic_data[idx/8] <<= 1;
-		} else {
-			// 每个字节只需要位移7次即可，最后一位，也就是真正的最低位的数据设置以后不再做左移
-			// 否则会丢失最高位的数据，并产生点阵偏移
-			//ic_data[idx/8] >>= 1;
-		}
-		
-		pSCLK=1;
-		
-		//display();//test
-	}
-	
-	// 读取字节数据后，则把片选信号（CS#）变为高，结束本次操作。
-	pCE=1;
-	return ic_data;
-}
-
-uchar* getICData_ASCII_8x16(uchar ch) {
-	// ASCII字符所在地址的计算公式
-	addr = (ch-0x20)*16+0x3b7c0;
-	return getICData(addr, 16);
-}
-
-uchar* getICData_Hanzi_16x16(uchar* hz) {
-	unsigned long hzGBCodeH8, hzGBCodeL8;
-	
-	// 由于后面有地址的计算，所以必须使用可容纳大数的long型作为中间变量，否则做地址运算时会溢出
-	// 直接将uchar型赋值给long型的话，没有赋值到的高位有可能乱掉，所以跟0xFF相与一次，确保只留下uchar部分的数据
-	hzGBCodeH8 = hz[0] & 0xFF;
-	hzGBCodeL8 = hz[1] & 0xFF;
-	
-	// GB2312汉字所在地址的计算公式
-	if(hzGBCodeH8 ==0xA9 && hzGBCodeL8 >=0xA1)
-		addr = (282 + (hzGBCodeL8 - 0xA1 ))*32;
-	else if(hzGBCodeH8 >=0xA1 && hzGBCodeH8 <= 0xA3 && hzGBCodeL8 >=0xA1)
-		addr =( (hzGBCodeH8 - 0xA1) * 94 + (hzGBCodeL8 - 0xA1))*32;
-	else if(hzGBCodeH8 >=0xB0 && hzGBCodeH8 <= 0xF7 && hzGBCodeL8 >=0xA1) {
-		// addr = ((hzGBCodeH8 - 0xB0) * 94 + (hzGBCodeL8 - 0xA1)+ 846)*32;
-		addr = (hzGBCodeH8 - 0xB0) * 94;
-		addr += (hzGBCodeL8 - 0xA1) + 846;
-		addr *= 32;
-	}
-	
-	return getICData(addr, 32);
-}
-
 /*--------------------------------------------------------------
     点阵LED第几行显示数据
    其中*p为传输的点阵数据，row为第几行显示，zishu为显示多少个字
 ---------------------------------------------------------------*/
-void HC595_Data_Send(uchar *p, uchar row, uchar offset)
+void HC595_Data_Send(uchar *p, uchar offset)
 {
 	uchar i=0;
 	uchar temp=0;
@@ -938,58 +580,181 @@ void shiftLeft() {
 	
 }
 
-// 取得指定文字的指定列的点阵数据（两个字节）
-// 返回参数结构：
-//    colData[0] : 返回是否为Asc/汉字标志位。0为Ascii,1为汉字。
-//    colData[1] : 返回指定列 上半部分数据
-//    colData[2] : 返回指定列 下半部分数据
-void getICData_Col(uchar* str, uchar colIdx, uchar* colData)
+// 将接收到的IC点阵数据存入缓冲区用于显示
+// pICData	- 接收到的点阵数组
+// size		- 点阵数组的大小。通常汉字为32字节，半角ASCII码为16字节。
+// pos		- 指定该点阵数据显示的开始位置(0-7)，以8位（列）为一个单位。会覆盖原来的数据。
+void setICDataToBuffer(unsigned char *pICData, unsigned char size, unsigned char pos)
 {
-	unsigned long hzGBCodeH8, hzGBCodeL8;
+	// ############# 从字库芯片GT20L16S1Y取出的点阵信息是竖置横列模式（例：字母A） ############# 
+	// 从字库芯片GT20L16S1Y取出的点阵信息是竖置横列模式，也就是以竖排为单位取到的数据
+	// ---- 下面从芯片取到的字母A的点阵数据 竖置横排的（而且是高位在下面，低位在上面） ---- 
+	//       B0	B1	B2	B3	B4	B5	B6	B7
+	// bit0  0	0	0	0	0	0	0	0
+	// bit1  0	0	0	●	0	0	0	0
+	// bit2  0	0	●	0	●	0	0	0
+	// bit3  0	0	●	0	●	0	0	0
+	// bit4  0	0	●	0	●	0	0	0
+	// bit5  0	●	0	0	0	●	0	0
+	// bit6  0	●	0	0	0	●	0	0
+	// bit7  0	●	●	●	●	●	0	0
+	//       B8	B9	B10	B11	B12	B13	B14	B15
+	// bit0  ●	0	0	0	0	0	●	0
+	// bit1  ●	0	0	0	0	0	●	0
+	// bit2  ●	0	0	0	0	0	●	0
+	// bit3  ●	0	0	0	0	0	●	0
+	// bit4  0	0	0	0	0	0	0	0
+	// bit5  0	0	0	0	0	0	0	0
+	// bit6  0	0	0	0	0	0	0	0
+	// bit7  0	0	0	0	0	0	0	0
+	// 而手头的这款点阵屏的驱动方式是行驱动，也就是每次扫描时需要传入一整行的点阵信息
+	// 所以需要把每次取到的点阵信息转存到横置竖排（也就是汉字取模软件中的“行列式”）形式的buf中去，
+	// 显示时从buf中取连续的一整行的8个字节的数据串行传入595用于扫描显示
+	// 而存放的坐标跟这个字所在的显示位置有关系，比如我们打算将上面这个A的点阵显示在屏幕的最左边
+	// 那么，转存以后应该是下面这个样子（右侧的数据省略）
+	// 也就是说要将取到的B0-B7的最高位组合成buf里的一个字节B0（字符A为例就是0x00）
+	// 将取到的B0-B7的次高位组合成buf里的字节B1（字符A为例就是0x10）
+	//     bit7 ---------------------- bit0
+	// B0	0	0	0	0	0	0	0	0
+	// B1	0	0	0	●	0	0	0	0
+	// B2	0	0	●	0	●	0	0	0
+	// B3	0	0	●	0	●	0	0	0
+	// B4	0	0	●	0	●	0	0	0
+	// B5	0	●	0	0	0	●	0	0
+	// B6	0	●	0	0	0	●	0	0
+	// B7	0	●	●	●	●	●	0	0
+	// B8	●	0	0	0	0	0	●	0
+	// B9	●	0	0	0	0	0	●	0
+	// B10	●	0	0	0	0	0	●	0
+	// B11	●	0	0	0	0	0	●	0
+	// B12	0	0	0	0	0	0	0	0
+	// B13	0	0	0	0	0	0	0	0
+	// B14	0	0	0	0	0	0	0	0
+	// B15	0	0	0	0	0	0	0	0
 
-	// 先清空目标字节
-	colData[0] = 0x00; //返回是否为Asc/汉字标志位。0为Ascii,1为汉字。 
-	colData[1] = 0x00; //返回指定列 上半部分数据
-	colData[2] = 0x00; //返回指定列 下半部分数据
-
-	// 计算点阵所在地址
-	// GB2312-80编码的编码范围是高位0xa1－0xfe，低位是 0xa1-0xfe ，
-	// 其中汉字范围为 0xb0a1 和 0xf7fe，如果只是简单地判断汉字，则只要查看高字节是否大于等于0xa1就可以了
-	if (str[0] >= 0x20 && str[0] <= 0x7E) {
-		// ASCII字符
-		addr = (str[0]-0x20)*16+0x3b7c0;
-
-		// 只需要指定列的2个字节，分两次取单字节
-		colData[1] = getICData(addr+colIdx, 1)[0];
-		colData[2] = getICData(addr+colIdx+8, 1)[0];
-
-		colData[0] = 0;
-	} else {
-		// 全角汉字
-		// 由于后面有地址的计算，所以必须使用可容纳大数的long型作为中间变量，否则做地址运算时会溢出
-		// 直接将uchar型赋值给long型的话，没有赋值到的高位有可能乱掉，所以跟0xFF相与一次，确保只留下uchar部分的数据
-		hzGBCodeH8 = str[0] & 0xFF;
-		hzGBCodeL8 = str[1] & 0xFF;
-
-		// GB2312汉字所在地址的计算公式
-		if(hzGBCodeH8 ==0xA9 && hzGBCodeL8 >=0xA1)
-			addr = (282 + (hzGBCodeL8 - 0xA1 ))*32;
-		else if(hzGBCodeH8 >=0xA1 && hzGBCodeH8 <= 0xA3 && hzGBCodeL8 >=0xA1)
-			addr =( (hzGBCodeH8 - 0xA1) * 94 + (hzGBCodeL8 - 0xA1))*32;
-		else if(hzGBCodeH8 >=0xB0 && hzGBCodeH8 <= 0xF7 && hzGBCodeL8 >=0xA1) {
-			// addr = ((hzGBCodeH8 - 0xB0) * 94 + (hzGBCodeL8 - 0xA1)+ 846)*32;
-			addr = (hzGBCodeH8 - 0xB0) * 94;
-			addr += (hzGBCodeL8 - 0xA1) + 846;
-			addr *= 32;
-		}
-
-		// 只需要整个汉字指定列的2个字节，分两次取单字节
-		colData[1] = getICData(addr+colIdx, 1)[0];
-		colData[2] = getICData(addr+colIdx+16, 1)[0];
-
-		colData[0] = 1;
+	uchar bufByteIdx = 0;
+	uchar icByteIdx = 0;
+	
+	uchar* pTmpByteBufHZ;
+	
+	//clear target data
+	//memset(&bufHZ[pos*16], size, 0x00);
+	
+	switch(size){
+		case 32:
+			// 汉字
+			// 汉字的IC点阵数据16列X16行: 
+			// B0-B7 为POS+0区域的上8行数据，B16-B23为POS+0区域的下8行数据
+			// B8-B15为POS+1区域的上8行数据，B24-B31为POS+1区域的下8行数据
+			// 所以大buff的B0-B7   的数据从IC数据的B0-B7   中取出来（行列互换）
+			//     大buff的B8-B15  的数据从IC数据的B16-B23 中取出来（行列互换）
+			//     大buff的B16-B23 的数据从IC数据的B8-B15  中取出来（行列互换）
+			//     大buff的B24-B31 的数据从IC数据的B24-B31 中取出来（行列互换）
+			for (bufByteIdx=0; bufByteIdx<size; bufByteIdx++){
+				pTmpByteBufHZ = &(bufHZ[pos*16 + bufByteIdx]);
+				//display();//test
+				// 先清空目标字节
+				pTmpByteBufHZ[0] = 0x00;
+				
+				if(bufByteIdx < 8){
+					for (icByteIdx=0; icByteIdx<8; icByteIdx++){
+						// 每次给最低位赋值后左移一位，最后得到8位数据
+						pTmpByteBufHZ[0] <<= 1;
+						
+						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
+							// 如果ic的该位数据是1，则给缓冲字节最低位赋值1
+							pTmpByteBufHZ[0] |= 0x01;
+						} else {
+							// 否则赋值0
+							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
+						}
+					}
+				}
+				
+				if(bufByteIdx >= 8 && bufByteIdx < 16 ){
+					for (icByteIdx=16; icByteIdx<24; icByteIdx++){
+						pTmpByteBufHZ[0] <<= 1;
+						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
+							pTmpByteBufHZ[0] |= 0x01;
+						} else {
+							// 否则赋值0
+							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
+						}
+					}
+				}
+				
+				if(bufByteIdx >= 16 && bufByteIdx < 24 ){
+					for (icByteIdx=8; icByteIdx<16; icByteIdx++){
+						pTmpByteBufHZ[0] <<= 1;
+						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
+							pTmpByteBufHZ[0] |= 0x01;
+						} else {
+							// 否则赋值0
+							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
+						}
+					}
+				}
+				
+				if(bufByteIdx >= 24 && bufByteIdx < 32 ){
+					for (icByteIdx=24; icByteIdx<32; icByteIdx++){
+						pTmpByteBufHZ[0] <<= 1;
+						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
+							pTmpByteBufHZ[0] |= 0x01;
+						} else {
+							// 否则赋值0
+							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
+						}
+					}
+				}
+			}
+			break;
+		case 16:
+			// 半角ACSII符号
+			// 半角字符的IC点阵数据8列X16行: B0-B7为点阵的上8行数据，B8-B15为点阵的下8行数据（见上面的字符A的例子）
+			// 所以大buff的B0-B7 的数据从IC数据的B0-B7 中取出来（行列互换）
+			//   而大buff的B8-B15的数据从IC数据的B8-B15中取出来（行列互换）
+			for (bufByteIdx=0; bufByteIdx<size; bufByteIdx++){
+				//display();//test
+					
+				pTmpByteBufHZ = &(bufHZ[pos*16 + bufByteIdx]);
+				
+				// 先清空目标字节
+				pTmpByteBufHZ[0] = 0x00;
+				
+				if(bufByteIdx < 8){
+					for (icByteIdx=0; icByteIdx<8; icByteIdx++){
+						// 每次给最低位赋值后左移一位，最后得到8位数据
+						pTmpByteBufHZ[0] <<= 1;
+						
+						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
+							// 如果ic的该位数据是1，则给缓冲字节最低位赋值1
+							pTmpByteBufHZ[0] |= 0x01; // 0000 0001
+						} else {
+							// 否则赋值0，默认是0所以什么都不做
+							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
+						}
+					}
+				}
+				
+				if(bufByteIdx >= 8 && bufByteIdx < 16 ){
+					for (icByteIdx=8; icByteIdx<16; icByteIdx++){
+						// 每次给最低位赋值后左移一位，最后得到8位数据
+						pTmpByteBufHZ[0] <<= 1;
+						
+						if (((pICData[icByteIdx]<<(7-bufByteIdx%8)) & 0x80) != 0){
+							// 如果ic的该位数据是1，则给缓冲字节最低位赋值1
+							pTmpByteBufHZ[0] |= 0x01; // 0000 0001
+						} else {
+							// 否则赋值0，默认是0所以什么都不做
+							pTmpByteBufHZ[0] &= 0xFE; // 1111 1110
+						}
+					}
+				}
+			}
+			break;
+		default:
+			break;
 	}
-
 	
 }
 
@@ -1006,21 +771,32 @@ void testSetFullScreenByte(uchar bData)
 	
 	for(row = 0; row < 16; row++)
 	{
+		/*关屏显示，原理为使HC138输出全为1，从而三极管截止，点阵不显示*/
+		EN_port = 1;
+
+		// 将每一位移入595的移位寄存器
+		// SM16106的LE（锁存）设置为低电平，数据移入
+		Latch_port = 0;
+
 		for(temp=0;temp<8;temp++){
 			for(i=0;i<8;i++){
+				CLK_port = 0;
+
 				if(((bData<<i)&0x80)!=0) DATA_R1 = 0;
 				else DATA_R1 = 1;
+				
 				CLK_port = 1;
-				CLK_port = 0;
 			}
 		}
 
-		EN_port = 1; /*关屏显示，原理为使HC138输出全为1，从而三极管截止，点阵不显示*/
+		/*数据锁存*/
+		Latch_port = 1;
 
+		//控制138打开指定行的输入
 		ABCD_port = (ABCD_port & 0xf0)|row;
 
-		Latch_port = 1; /*允许HC595数据输出到Q1-Q8端口*/
-		EN_port = 0; /*HC138输出有效，打开显示*/
-		Latch_port = 0;	/*锁定HC595数据输出*/
+		/*HC138输出有效，打开显示*/
+		EN_port = 0;
+		
 	}
 }

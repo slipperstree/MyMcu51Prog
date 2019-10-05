@@ -215,12 +215,19 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>1</TopLine>
+      <CurrentLine>10</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>.\16x64LED_ForNewPCB.c</PathWithFileName>
-      <FilenameWithoutPath>16x64LED_ForNewPCB.c</FilenameWithoutPath>
+      <PathWithFileName>.\16x64LED_ForNewPCB_16x64_ScrollText_V2.c</PathWithFileName>
+      <FilenameWithoutPath>16x64LED_ForNewPCB_16x64_ScrollText_V2.c</FilenameWithoutPath>
     </File>
+  </Group>
+
+  <Group>
+    <GroupName>function</GroupName>
+    <tvExp>0</tvExp>
+    <tvExpOptDlg>0</tvExpOptDlg>
+    <cbSel>0</cbSel>
   </Group>
 
   <WinLayout>
@@ -1558,5 +1565,22 @@
       </Window>
     </View>
   </WinLayout>
+
+  <MDIGroups>
+    <Orientation>1</Orientation>
+    <ActiveMDIGroup>0</ActiveMDIGroup>
+    <MDIGroup>
+      <Size>100</Size>
+      <ActiveTab>0</ActiveTab>
+      <Documents>
+        <Doc>
+          <Name>.\16x64LED_ForNewPCB_16x64_ScrollText_V2.c</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>10</CurrentLine>
+        </Doc>
+      </Documents>
+    </MDIGroup>
+  </MDIGroups>
 
 </ProjectOpt>
