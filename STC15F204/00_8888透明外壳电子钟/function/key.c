@@ -20,7 +20,7 @@
 // ******* 根据需要修改下列用于判断单击，双击有效的时间长短 ***********************************
     
     //不需要响应双击时间时可放开本句(可以减少代码体积)
-    #define NOT_USE_DBCLICK                       
+    //#define NOT_USE_DBCLICK                       
     
     #define TICK_WAIT_CLICK_END         0x2500    //判断单击用，按下和弹起之间不能超过多久
     #define TICK_WAIT_DBCLICK_START     0x0200    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）

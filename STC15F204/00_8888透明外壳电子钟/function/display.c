@@ -161,18 +161,18 @@ uchar getDispDatByChar(char ch, uchar isDigit3) {
 			// A的ascii=65，减去55得到11，正好是本程序定义的字库里的A的数组下标
 			ret = isDigit3 ? digit3[ch-55] : digit124[ch-55];
 			break;
-		//case 'Y': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_Y] : digit124[CHAR_DAT_INDEX_Y]; break;
-		//case 'R': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_R] : digit124[CHAR_DAT_INDEX_R]; break;
-		//case 'S': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_S] : digit124[CHAR_DAT_INDEX_S]; break;
-		//case 'T': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_T] : digit124[CHAR_DAT_INDEX_T]; break;
-		//case 'L': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_L] : digit124[CHAR_DAT_INDEX_L]; break;
-		//case 'H': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_H] : digit124[CHAR_DAT_INDEX_H]; break;
-		//case 'J': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_J] : digit124[CHAR_DAT_INDEX_J]; break;
-		//case 'I': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_I] : digit124[CHAR_DAT_INDEX_I]; break;
-		//case 'P': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_P] : digit124[CHAR_DAT_INDEX_P]; break;
-		//case 'U': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_U] : digit124[CHAR_DAT_INDEX_U]; break;
-		//case 'N': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_N] : digit124[CHAR_DAT_INDEX_N]; break;
-		//case 'O': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_O] : digit124[CHAR_DAT_INDEX_O]; break;
+		case 'Y': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_Y] : digit124[CHAR_DAT_INDEX_Y]; break;
+		case 'R': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_R] : digit124[CHAR_DAT_INDEX_R]; break;
+		case 'S': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_S] : digit124[CHAR_DAT_INDEX_S]; break;
+		case 'T': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_T] : digit124[CHAR_DAT_INDEX_T]; break;
+		case 'L': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_L] : digit124[CHAR_DAT_INDEX_L]; break;
+		case 'H': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_H] : digit124[CHAR_DAT_INDEX_H]; break;
+		case 'J': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_J] : digit124[CHAR_DAT_INDEX_J]; break;
+		case 'I': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_I] : digit124[CHAR_DAT_INDEX_I]; break;
+		case 'P': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_P] : digit124[CHAR_DAT_INDEX_P]; break;
+		case 'U': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_U] : digit124[CHAR_DAT_INDEX_U]; break;
+		case 'N': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_N] : digit124[CHAR_DAT_INDEX_N]; break;
+		case 'O': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_O] : digit124[CHAR_DAT_INDEX_O]; break;
 		case '-': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_MINUS] : digit124[CHAR_DAT_INDEX_MINUS]; break;
 		case ' ': ret = isDigit3 ? digit3[CHAR_DAT_INDEX_SP] : digit124[CHAR_DAT_INDEX_SP]; break;
 	default:

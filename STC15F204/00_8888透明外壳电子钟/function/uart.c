@@ -10,7 +10,7 @@
 #define DUMMY_UART       3  //只定义了对外的接口保证编译通过，没有功能
 
 // 硬件串口和软件串口可指定（如果使用软串口会占用定时器0）
-#define UART_TYPE DUMMY_UART
+#define UART_TYPE SOFTWARE_UART
 
 #if (UART_TYPE == DUMMY_UART)
 	void UART_init(){}

@@ -104,24 +104,24 @@ uchar xdata bufHZ[128] = {
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 };
 
-uchar nowShiftOffset=0; 	// µ±Ç°×óÒÆÆ«ÒÆÁ¿(È«½Ç 0-15/ °ë½Ç 0-7)
-int nowShowTextPos=0;		// µ±Ç°ÏÔÊ¾µÚ¼¸¸ö×Ö£¨ÑÏ¸ñÀ´ËµÊÇµÚ¼¸¸ö×Ö½Ú£©
+data uchar nowShiftOffset=0; 	// µ±Ç°×óÒÆÆ«ÒÆÁ¿(È«½Ç 0-15/ °ë½Ç 0-7)
+idata int nowShowTextPos=0;		// µ±Ç°ÏÔÊ¾µÚ¼¸¸ö×Ö£¨ÑÏ¸ñÀ´ËµÊÇµÚ¼¸¸ö×Ö½Ú£©
 
 // Ò»´ÎÐÔ´«¸øHC595ÓÃµÄ64+16Î»µÄÒ»ÕûÐÐÊý¾Ý£¨°üÀ¨ÒÆÎ»ÓÃµÄµÚÎå¸öºº×ÖµÄ»º³åÇø£©
-uchar data row_data_buf[10];
+data uchar row_data_buf[10];
 void HC595_Data_Send(uchar *p, uchar offset);
 
 // ×óÒÆº¯Êý £¨°üÀ¨´ÓICÈ¡×îÓÒ±ßµÄÒ»ÁÐÊý¾Ý£¬´æÈë´óbuffer£¬Í¬Ê±¸üÐÂµ±Ç°Æ«ÒÆÎ»ÖÃ£©
 void shiftLeft(void);
-int ttShiftLeft = 0;
+data int ttShiftLeft = 0;
 
-uchar nowText=0;
-int showDataSize=0;
-uchar* textForShow;
+data uchar nowText=0;
+data int showDataSize=0;
+idata uchar* textForShow;
 // ÏÔÊ¾ÎÄ×ÖÉèÖÃ£¬×¢Òâ³¤¶ÈºÍÎÄ×ÖÄÚÈÝÒªÆ¥Åä
-int showDataSize2=972*2;
+int idata showDataSize2=972*2;
 uchar code textForShow2[] = "¡¶³¤ºÞ¸è¡·¡¾ÌÆ¡¤°×¾ÓÒ×¡¿ºº»ÊÖØÉ«Ë¼Çã¹ú£¬ÓùÓî¶àÄêÇó²»µÃ¡£Ñî¼ÒÓÐÅ®³õ³¤³É£¬ÑøÔÚÉî¹ëÈËÎ´Ê¶¡£ÌìÉúÀöÖÊÄÑ×ÔÆú£¬Ò»³¯Ñ¡ÔÚ¾ýÍõ²à¡£»ØíøÒ»Ð¦°ÙÃÄÉú£¬Áù¹¬·Û÷ìÎÞÑÕÉ«¡£´ºº®´ÍÔ¡»ªÇå³Ø£¬ÎÂÈªË®»¬Ï´ÄýÖ¬¡£ÊÌ¶ù·öÆð½¿ÎÞÁ¦£¬Ê¼ÊÇÐÂ³Ð¶÷ÔóÊ±¡£ÔÆ÷Þ»¨ÑÕ½ð²½Ò¡£¬Ü½ÈØÕÊÅ¯¶È´ºÏü¡£´ºÏü¿à¶ÌÈÕ¸ßÆð£¬´Ó´Ë¾ýÍõ²»Ôç³¯¡£³Ð»¶ÊÌÑçÎÞÏÐÏ¾£¬´º´Ó´ºÓÎÒ¹×¨Ò¹¡£ºó¹¬¼ÑÀöÈýÇ§ÈË£¬ÈýÇ§³è°®ÔÚÒ»Éí¡£½ðÎÝ×±³É½¿ÊÌÒ¹£¬ÓñÂ¥Ñç°Õ×íºÍ´º¡£æ¢ÃÃµÜÐÖ½ÔÁÐÍÁ£¬¿ÉÁ¯¹â²ÊÉúÃÅ»§¡£ËìÁîÌìÏÂ¸¸Ä¸ÐÄ£¬²»ÖØÉúÄÐÖØÉúÅ®¡£æê¹¬¸ß´¦ÈëÇàÔÆ£¬ÏÉÀÖ·çÆ®´¦´¦ÎÅ¡£»º¸èÂýÎèÄýË¿Öñ£¬¾¡ÈÕ¾ýÍõ¿´²»×ã¡£ÓæÑôÜ±¹Ä¶¯µØÀ´£¬¾ªÆÆÄÞÉÑÓðÒÂÇú¡£¾ÅÖØ³ÇãÚÑÌ³¾Éú£¬Ç§³ËÍòÆïÎ÷ÄÏÐÐ¡£´ä»ªÒ¡Ò¡ÐÐ¸´Ö¹£¬Î÷³ö¶¼ÃÅ°ÙÓàÀï¡£Áù¾ü²»·¢ÎÞÄÎºÎ£¬Íð×ª¶êÃ¼ÂíÇ°ËÀ¡£»¨îäÎ¯µØÎÞÈËÊÕ£¬´äÇÌ½ðÈ¸ÓñÉ¦Í·¡£¾ýÍõÑÚÃæ¾È²»µÃ£¬»Ø¿´ÑªÀáÏàºÍÁ÷¡£»Æ°£É¢Âþ·çÏôË÷£¬ÔÆÕ»ÝÓæúµÇ½£¸ó¡£¶ëáÒÉ½ÏÂÉÙÈËÐÐ£¬ìºÆìÎÞ¹âÈÕÉ«±¡¡£Êñ½­Ë®±ÌÊñÉ½Çà£¬Ê¥Ö÷³¯³¯ÄºÄºÇé¡£ÐÐ¹¬¼ûÔÂÉËÐÄÉ«£¬Ò¹ÓêÎÅÁå³¦¶ÏÉù¡£ÌìÐýÈÕ×ª»ØÁúÔ¦£¬µ½´Ë³ì³ù²»ÄÜÈ¥¡£ÂíáÍÆÂÏÂÄàÍÁÖÐ£¬²»¼ûÓñÑÕ¿ÕËÀ´¦¡£¾ý³¼Ïà¹Ë¾¡Õ´ÒÂ£¬¶«Íû¶¼ÃÅÐÅÂí¹é¡£¹éÀ´³ØÔ·½ÔÒÀ¾É£¬Ì«ÒºÜ½ÈØÎ´ÑëÁø¡£Ü½ÈØÈçÃæÁøÈçÃ¼£¬¶Ô´ËÈçºÎ²»Àá´¹¡£´º·çÌÒÀî»¨¿ªÒ¹£¬ÇïÓêÎàÍ©Ò¶ÂäÊ±¡£Î÷¹¬ÄÏÄÚ¶àÇï²Ý£¬ÂäÒ¶Âú½×ºì²»É¨¡£ÀæÔ°µÜ×Ó°×·¢ÐÂ£¬½··¿°¢¼àÇà¶ðÀÏ¡£Ï¦µîÓ©·ÉË¼ÇÄÈ»£¬¹ÂµÆÌô¾¡Î´³ÉÃß¡£³Ù³ÙÖÓ¹Ä³õ³¤Ò¹£¬¹¢¹¢ÐÇºÓÓûÊïÌì¡£Ô§ÑìÍßÀäËª»ªÖØ£¬ôä´äôÀº®Ë­Óë¹²¡£ÓÆÓÆÉúËÀ±ð¾­Äê£¬»êÆÇ²»ÔøÀ´ÈëÃÎ¡£ÁÙÚöµÀÊ¿ºè¶¼¿Í£¬ÄÜÒÔ¾«³ÏÖÂ»êÆÇ¡£Îª¸Ð¾ýÍõÕ¹×ªË¼£¬Ëì½Ì·½Ê¿ÒóÇÚÃÙ¡£ÅÅ¿ÕÔ¦Æø±¼Èçµç£¬ÉýÌìÈëµØÇóÖ®±é¡£ÉÏÇî±ÌÂäÏÂ»ÆÈª£¬Á½´¦Ã£Ã£½Ô²»¼û¡£ºöÎÅº£ÉÏÓÐÏÉÉ½£¬É½ÔÚÐéÎÞçÎÃì¼ä¡£Â¥¸óÁáççÎåÔÆÆð£¬ÆäÖÐ´ÂÔ¼¶àÏÉ×Ó¡£ÖÐÓÐÒ»ÈË×ÖÌ«Õæ£¬Ñ©·ô»¨Ã²²Î²îÊÇ¡£½ðãÚÎ÷ÏáßµÓñìç£¬×ª½ÌÐ¡Óñ±¨Ë«³É¡£ÎÅµ½ºº¼ÒÌì×ÓÊ¹£¬¾Å»ªÕÊÀïÃÎ»ê¾ª¡£À¿ÒÂÍÆÕíÆðÅÇ»Ø£¬Öé²­ÒøÆÁåÎåÆ¿ª¡£ÔÆ÷Þ°ëÆ«ÐÂË¯¾õ£¬»¨¹Ú²»ÕûÏÂÌÃÀ´¡£·ç´µÏÉñÇÆ®Ò¡¾Ù£¬ÓÌËÆÄÞÉÑÓðÒÂÎè¡£ÓñÈÝ¼ÅÄ¯ÀáÀ»¸É£¬Àæ»¨Ò»Ö¦´º´øÓê¡£º¬ÇéÄýíûÐ»¾ýÍõ£¬Ò»±ðÒôÈÝÁ½ÃìÃ£¡£ÕÑÑôµîÀï¶÷°®¾ø£¬ÅîÀ³¹¬ÖÐÈÕÔÂ³¤¡£»ØÍ·ÏÂÍûÈËå¾´¦£¬²»¼û³¤°²¼û³¾Îí¡£Î¨½«¾ÉÎï±íÉîÇé£¬îäºÏ½ðîÎ¼Ä½«È¥¡£îÎÁôÒ»¹ÉºÏÒ»ÉÈ£¬îÎë¢»Æ½ðºÏ·Öîä¡£µ«½ÌÐÄËÆ½ðîä¼á£¬ÌìÉÏÈË¼ä»áÏà¼û¡£ÁÙ±ðÒóÇÚÖØ¼Ä´Ê£¬´ÊÖÐÓÐÊÄÁ½ÐÄÖª¡£ÆßÔÂÆßÈÕ³¤Éúµî£¬Ò¹°ëÎÞÈËË½ÓïÊ±¡£ÔÚÌìÔ¸×÷±ÈÒíÄñ£¬ÔÚµØÔ¸ÎªÁ¬ÀíÖ¦¡£Ìì³¤µØ¾ÃÓÐÊ±¾¡£¬´ËºÞÃàÃàÎÞ¾øÆÚ¡£";
-int showDataSize1=722*2;
+int idata showDataSize1=722*2;
 uchar code textForShow1[] = "¡¶ÅýÅÃÐÐ¡·¡¾ÌÆ¡¤°×¾ÓÒ×¡¿ä±Ñô½­Í·Ò¹ËÍ¿Í£¬·ãÒ¶Ý¶»¨ÇïÉªÉª¡£Ö÷ÈËÏÂÂí¿ÍÔÚ´¬£¬¾Ù¾ÆÓûÒûÎÞ¹ÜÏÒ¡£×í²»³É»¶²Ò½«±ð£¬±ðÊ±Ã£Ã£½­½þÔÂ¡£ºöÎÅË®ÉÏÅýÅÃÉù£¬Ö÷ÈËÍü¹é¿Í²»·¢¡£Ñ°Éù°µÎÊµ¯ÕßË­£¬ÅýÅÃÉùÍ£ÓûÓï³Ù¡£ÒÆ´¬Ïà½üÑûÏà¼û£¬Ìí¾Æ»ØµÆÖØ¿ªÑç¡£Ç§ºôÍò»½Ê¼³öÀ´£¬ÓÌ±§ÅýÅÃ°ëÕÚÃæ¡£×ªÖá²¦ÏÒÈýÁ½Éù£¬Î´³ÉÇúµ÷ÏÈÓÐÇé¡£ÏÒÏÒÑÚÒÖÉùÉùË¼£¬ËÆËßÆ½Éú²»µÃÖ¾¡£µÍÃ¼ÐÅÊÖÐøÐøµ¯£¬Ëµ¾¡ÐÄÖÐÎÞÏÞÊÂ¡£ÇáÂ£ÂýÄíÄ¨¸´Ìô£¬³õÎª¡¶ÄÞÉÑ¡·ºó¡¶ÁùçÛ¡·¡£´óÏÒàÐàÐÈç¼±Óê£¬Ð¡ÏÒÇÐÇÐÈçË½Óï¡£àÐàÐÇÐÇÐ´íÔÓµ¯£¬´óÖéÐ¡ÖéÂäÓñÅÌ¡£¼ä¹ØÝºÓï»¨µ×»¬£¬ÓÄÑÊÈªÁ÷±ùÏÂÄÑ¡£±ùÈªÀäÉ¬ÏÒÄý¾ø£¬Äý¾ø²»Í¨ÉùÔÝÐª¡£±ðÓÐÓÄ³î°µºÞÉú£¬´ËÊ±ÎÞÉùÊ¤ÓÐÉù¡£ÒøÆ¿Õ§ÆÆË®½¬±Å£¬ÌúÆïÍ»³öµ¶Ç¹Ãù¡£ÇúÖÕÊÕ²¦µ±ÐÄ»­£¬ËÄÏÒÒ»ÉùÈçÁÑ²¯¡£¶«´¬Î÷ô³ÇÄÎÞÑÔ£¬Î¨¼û½­ÐÄÇïÔÂ°×¡£³ÁÒ÷·Å²¦²åÏÒÖÐ£¬Õû¶ÙÒÂÉÑÆðÁ²ÈÝ¡£×ÔÑÔ±¾ÊÇ¾©³ÇÅ®£¬¼ÒÔÚÏºó¡ÁêÏÂ×¡¡£Ê®ÈýÑ§µÃÅýÅÃ³É£¬ÃûÊô½Ì·»µÚÒ»²¿¡£Çú°ÕÔø½ÌÉÆ²Å·þ£¬×±³ÉÃ¿±»ÇïÄï¶Ê¡£ÎåÁêÄêÉÙÕù²øÍ·£¬Ò»Çúºìç¯²»ÖªÊý¡£îäÍ·Òøó÷»÷½ÚËé£¬ÑªÉ«ÂÞÈ¹·­¾ÆÎÛ¡£½ñÄê»¶Ð¦¸´Ã÷Äê£¬ÇïÔÂ´º·çµÈÏÐ¶È¡£µÜ×ß´Ó¾ü°¢ÒÌËÀ£¬ÄºÈ¥³¯À´ÑÕÉ«¹Ê¡£ÃÅÇ°ÀäÂä°°ÂíÏ¡£¬ÀÏ´ó¼Þ×÷ÉÌÈË¸¾¡£ÉÌÈËÖØÀûÇá±ðÀë£¬Ç°ÔÂ¸¡ÁºÂò²èÈ¥¡£È¥À´½­¿ÚÊØ¿Õ´¬£¬ÈÆ´¬ÔÂÃ÷½­Ë®º®¡£Ò¹ÉîºöÃÎÉÙÄêÊÂ£¬ÃÎÌä×±ÀáºìÀ»¸É¡£ÎÒÎÅÅýÅÃÒÑÌ¾Ï¢£¬ÓÖÎÅ´ËÓïÖØßóßó¡£Í¬ÊÇÌìÑÄÂÙÂäÈË£¬Ïà·êºÎ±ØÔøÏàÊ¶£¡ÎÒ´ÓÈ¥Äê´ÇµÛ¾©£¬ÚØ¾ÓÎÔ²¡ä±Ñô³Ç¡£ä±ÑôµØÆ§ÎÞÒôÀÖ£¬ÖÕËê²»ÎÅË¿ÖñÉù¡£×¡½üäÔ½­µØµÍÊª£¬»ÆÂ«¿àÖñÈÆÕ¬Éú¡£Æä¼äµ©ÄºÎÅºÎÎï£¿¶Å¾éÌäÑªÔ³°§Ãù¡£´º½­»¨³¯ÇïÔÂÒ¹£¬ÍùÍùÈ¡¾Æ»¹¶ÀÇã¡£ÆñÎÞÉ½¸èÓë´åµÑ£¿Å»ÑÆ³°ßîÄÑÎªÌý¡£½ñÒ¹ÎÅ¾ýÅýÅÃÓï£¬ÈçÌýÏÉÀÖ¶úÔÝÃ÷¡£Äª´Ç¸ü×øµ¯Ò»Çú£¬Îª¾ý·­×÷¡¶ÅýÅÃÐÐ¡·¡£¸ÐÎÒ´ËÑÔÁ¼¾ÃÁ¢£¬È´×ø´ÙÏÒÏÒ×ª¼±¡£ÆàÆà²»ËÆÏòÇ°Éù£¬Âú×ùÖØÎÅ½ÔÑÚÆü¡£×ùÖÐÆüÏÂË­×î¶à£¿½­ÖÝË¾ÂíÇàÉÀÊª¡£";
 
 //int showDataSize=21;
@@ -150,10 +150,10 @@ uchar code textForShow1[] = "¡¶ÅýÅÃÐÐ¡·¡¾ÌÆ¡¤°×¾ÓÒ×¡¿ä±Ñô½­Í·Ò¹ËÍ¿Í£¬·ãÒ¶Ý¶»¨ÇïÉ
 // static_idata_uchar nowBreathBright = 0;
 
 // PWMÁÁ¶ÈÉèÖÃ£¬²»¿ÉÒÔ³¬¹ý PWM_WIDTH_ALL£¬²»ÓÃÐÞ¸Ä
-uchar pwmBright = 1;
+idata uchar pwmBright = 1;
 
 // PWM¼ÆÊýÓÃ£¬²»ÓÃÐÞ¸Ä
-uchar ttPWM = 0;
+idata uchar ttPWM = 0;
 
 // ÓÃÓÚÈíPWM£¬¿ØÖÆÁÁ¶ÈÓÃ -----------------------------------------------------------------------------------
 
@@ -179,8 +179,8 @@ void UartInit();
 bit busy;
 
 // ´®¿Ú½ÓÊÜÎÄ×Ö»º³åÇø
-uchar serialRcvBuf[50]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-uchar serialRcvIdx=0;
+idata uchar serialRcvBuf[50]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+idata uchar serialRcvIdx=0;
 
 // ÆäËû¶¨Òå ######################################################################################
 //test
@@ -191,7 +191,7 @@ void testSetFullScreenByte(uchar);
 void setICDataToBuffer(unsigned char *pICData, unsigned char size, unsigned char pos);
 
 // ËäÈ»¶¨ÒåÁËTimer0µ«ÊÇmainº¯ÊýÃ»ÓÐÆôÓÃ£¬Ä¿Ç°»¹ÓÃ²»µ½£¬ÒÔºóÈç¹ûÐèÒª¿ÉÒÔÀûÓÃ
-int ttTimer0 = 0;
+idata int ttTimer0 = 0;
 void Timer0Init(void)		//30us@32.000MHz@6T
 {
 	EA=0;
@@ -225,9 +225,9 @@ void Timer2Init(void)
 // ·ÅÔÚ¶¨Ê±Æ÷0µÄÖÐ¶Ïº¯ÊýÖÐ¶¨Ê±£¨ºÜ¶Ì£©Ö´ÐÐ
 // ËÙ¶ÈÔ½¿ì»­ÃæÔ½²»ÉÁË¸£¬µ«Ã¿´Î²Ù×÷Ê±¼ä²»¿ÉÒÔ³¬¹ý¶¨Ê±¼ä¸ô
 // ¶ÁÈ¡×Ö¿â£¬¸üÐÂÏÔÊ¾Êý¾ÝµÄ´¦Àí±ØÐëÔÚ¶¨Ê±¼ä¸ôÄÚÍê³É£¨Èç¹û´ï²»µ½ÕâÃ´¿ì£¬ÖÁÉÙÒªÔÚÒ»ÆÁ16ÐÐÊý¾Ý¸ÕºÃÉ¨ÃèÍêÊ±Ö´ÐÐ£¬ÕâÑù¿´ÉÏÈ¥Ïà¶Ô×îÎÈ¶¨£¨Ã¿´ÎÔÚÍ¬Ò»¸öµØ·½ÍÏÂý£¬²»ÖÁÓÚÕûÌåÉÁË¸£©£©
-uchar rowIdx=0; // µ±Ç°É¨ÃèµÚ¼¸ÐÐ
+idata uchar rowIdx=0; // µ±Ç°É¨ÃèµÚ¼¸ÐÐ
 void display(){
-	uchar i;
+	idata uchar i;
 
 	ttPWM++;
 
@@ -335,9 +335,9 @@ void main()
 ---------------------------------------------------------------*/
 void HC595_Data_Send(uchar *p, uchar offset)
 {
-	uchar i=0;
-	uchar temp=0;
-	uchar* data_buff;
+	idata uchar i=0;
+	idata uchar temp=0;
+	idata uchar* data_buff;
 
 	/*½«Ã¿Ò»Î»ÒÆÈë595µÄÒÆÎ»¼Ä´æÆ÷*/
 	for(temp=0;temp<8;temp++){

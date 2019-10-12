@@ -25,7 +25,7 @@
     <ToolsetNumber>0x0</ToolsetNumber>
     <ToolsetName>MCS-51</ToolsetName>
     <TargetOption>
-      <CLK51>24000000</CLK51>
+      <CLK51>35000000</CLK51>
       <OPTTT>
         <gFlags>1</gFlags>
         <BeepAtEnd>1</BeepAtEnd>
@@ -76,27 +76,15 @@
         <IsCurrentTarget>1</IsCurrentTarget>
       </OPTFL>
       <CpuCode>255</CpuCode>
-      <Books>
-        <Book>
-          <Number>0</Number>
-          <Title>Data Sheet</Title>
-          <Path>DATASHTS\ATMEL\AT89C52_DS.PDF</Path>
-        </Book>
-        <Book>
-          <Number>1</Number>
-          <Title>Instruction Set Manual</Title>
-          <Path>DATASHTS\ATMEL\AT_C51ISM.PDF</Path>
-        </Book>
-      </Books>
       <DllOpt>
         <SimDllName>S8051.DLL</SimDllName>
         <SimDllArguments></SimDllArguments>
         <SimDlgDllName>DP51.DLL</SimDlgDllName>
-        <SimDlgDllArguments>-p52</SimDlgDllArguments>
+        <SimDlgDllArguments>-pDP8051</SimDlgDllArguments>
         <TargetDllName>S8051.DLL</TargetDllName>
         <TargetDllArguments></TargetDllArguments>
         <TargetDlgDllName>TP51.DLL</TargetDlgDllName>
-        <TargetDlgDllArguments>-p52</TargetDlgDllArguments>
+        <TargetDlgDllArguments>-p51</TargetDlgDllArguments>
       </DllOpt>
       <DebugOpt>
         <uSim>1</uSim>
@@ -153,7 +141,7 @@
         <aSer4>0</aSer4>
         <StkLoc>0</StkLoc>
         <TrcWin>0</TrcWin>
-        <newCpu>0</newCpu>
+        <newCpu>1</newCpu>
         <uProt>0</uProt>
       </DebugFlag>
       <LintExecutable></LintExecutable>
@@ -188,22 +176,22 @@
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <File>
-      <GroupNumber>0</GroupNumber>
-      <FileNumber>0</FileNumber>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>2</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>4</TopLine>
+      <CurrentLine>18</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\function\uart.c</PathWithFileName>
       <FilenameWithoutPath>uart.c</FilenameWithoutPath>
     </File>
     <File>
-      <GroupNumber>0</GroupNumber>
-      <FileNumber>0</FileNumber>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>3</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -216,12 +204,12 @@
       <FilenameWithoutPath>common.c</FilenameWithoutPath>
     </File>
     <File>
-      <GroupNumber>0</GroupNumber>
-      <FileNumber>0</FileNumber>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>4</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>84</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
       <TopLine>61</TopLine>
       <CurrentLine>72</CurrentLine>
@@ -230,36 +218,8 @@
       <FilenameWithoutPath>display.c</FilenameWithoutPath>
     </File>
     <File>
-      <GroupNumber>0</GroupNumber>
-      <FileNumber>0</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>88</TopLine>
-      <CurrentLine>93</CurrentLine>
-      <bDave2>0</bDave2>
-      <PathWithFileName>.\function\ds1302.c</PathWithFileName>
-      <FilenameWithoutPath>ds1302.c</FilenameWithoutPath>
-    </File>
-    <File>
-      <GroupNumber>0</GroupNumber>
-      <FileNumber>0</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>36</TopLine>
-      <CurrentLine>46</CurrentLine>
-      <bDave2>0</bDave2>
-      <PathWithFileName>.\function\key.c</PathWithFileName>
-      <FilenameWithoutPath>key.c</FilenameWithoutPath>
-    </File>
-    <File>
-      <GroupNumber>0</GroupNumber>
-      <FileNumber>0</FileNumber>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>5</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -268,15 +228,43 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>.\function\tempBrightSensorAdc.c</PathWithFileName>
-      <FilenameWithoutPath>tempBrightSensorAdc.c</FilenameWithoutPath>
+      <PathWithFileName>.\function\ds1302.c</PathWithFileName>
+      <FilenameWithoutPath>ds1302.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>6</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>9</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>206</TopLine>
+      <CurrentLine>229</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\function\key.c</PathWithFileName>
+      <FilenameWithoutPath>key.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>7</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\function\sensorAdc.c</PathWithFileName>
+      <FilenameWithoutPath>sensorAdc.c</FilenameWithoutPath>
     </File>
   </Group>
 
   <AlienFiles>
-    <PathWithFilename>M:\STC51MCU\STC15F204\00_8888透明外壳电子钟\HEADER\display.h</PathWithFilename>
-    <TopLine>55</TopLine>
-    <CurrentLine>60</CurrentLine>
+    <PathWithFilename>H:\我的坚果云\MCU\STC51MCU\STC15F204\00_8888透明外壳电子钟\HEADER\ds1302.h</PathWithFilename>
+    <TopLine>44</TopLine>
+    <CurrentLine>49</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -300,9 +288,9 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>M:\STC51MCU\STC15F204\00_8888透明外壳电子钟\HEADER\ds1302.h</PathWithFilename>
-    <TopLine>44</TopLine>
-    <CurrentLine>49</CurrentLine>
+    <PathWithFilename>H:\我的坚果云\MCU\STC51MCU\STC15F204\00_8888透明外壳电子钟\HEADER\display.h</PathWithFilename>
+    <TopLine>55</TopLine>
+    <CurrentLine>60</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1666,7 +1654,7 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>1</ActiveTab>
+      <ActiveTab>4</ActiveTab>
       <Documents>
         <Doc>
           <Name>.\main.c</Name>
@@ -1676,7 +1664,7 @@
         </Doc>
         <Doc>
           <Name>.\function\display.c</Name>
-          <ColumnNumber>84</ColumnNumber>
+          <ColumnNumber>0</ColumnNumber>
           <TopLine>61</TopLine>
           <CurrentLine>72</CurrentLine>
         </Doc>
@@ -1694,9 +1682,15 @@
         </Doc>
         <Doc>
           <Name>.\function\key.c</Name>
+          <ColumnNumber>9</ColumnNumber>
+          <TopLine>206</TopLine>
+          <CurrentLine>229</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\function\uart.c</Name>
           <ColumnNumber>0</ColumnNumber>
-          <TopLine>36</TopLine>
-          <CurrentLine>46</CurrentLine>
+          <TopLine>4</TopLine>
+          <CurrentLine>18</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>

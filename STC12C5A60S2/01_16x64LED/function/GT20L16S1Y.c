@@ -53,7 +53,7 @@ void readICDataToBuffer(uchar* str){
 // size：从起始地址连续取多少字节的点阵数据，目前只支持16（ASCII码）和32（GB2312汉字）两种
 uchar* getICData(unsigned long addr, uchar size) {
 	
-	int idx = 0;
+	idata int idx = 0;
 
 	//init
 	pCE=1;
@@ -169,7 +169,7 @@ uchar* getICData_Hanzi_16x16(uchar* hz) {
 //    colData[2] : 返回指定列 下半部分数据
 void getICData_Col(uchar* str, uchar colIdx, uchar* colData)
 {
-	unsigned long hzGBCodeH8, hzGBCodeL8;
+	idata unsigned long hzGBCodeH8, hzGBCodeL8;
 
 	// 先清空目标字节
 	colData[0] = 0x00; //返回是否为Asc/汉字标志位。0为Ascii,1为汉字。 

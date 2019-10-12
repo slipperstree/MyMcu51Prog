@@ -360,6 +360,18 @@
         </Group>
         <Group>
           <GroupName>function</GroupName>
+          <Files>
+            <File>
+              <FileName>common.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\function\common.c</FilePath>
+            </File>
+            <File>
+              <FileName>GT20L16S1Y.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\function\GT20L16S1Y.c</FilePath>
+            </File>
+          </Files>
         </Group>
       </Groups>
     </Target>
