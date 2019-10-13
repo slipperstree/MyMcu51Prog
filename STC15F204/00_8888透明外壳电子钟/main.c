@@ -24,7 +24,7 @@ main()
 	ADC_init();
 
 	// 开启呼吸效果
-	// DISPLAY_SetBreathMode(DISPLAY_BREATH_MODE_ON, DISPLAY_SPEED_LV_5);
+	//DISPLAY_SetBreathMode(DISPLAY_BREATH_MODE_ON, DISPLAY_SPEED_LV_5);
 
 	while(1){
 		//这个延时太长会导致软串口丢数据

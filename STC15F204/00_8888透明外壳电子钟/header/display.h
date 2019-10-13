@@ -12,7 +12,9 @@ enum EnumDispMode {
 	DISP_MODE_SET_DAY,
 	DISP_MODE_SET_HOUR,
 	DISP_MODE_SET_MINUTE,
-	DISP_MODE_TEMPRETURE
+	DISP_MODE_TEMPRETURE,
+	DISP_MODE_SET_COUNTDOWN_MINUTE,
+	DISP_MODE_COUNTDOWN,
     };
 
 enum EnumSpeed {
@@ -82,4 +84,8 @@ void DISPLAY_SetHourMinus();
 void DISPLAY_SetMinuteAdd();
 void DISPLAY_SetMinuteMinus();
 
+void DISPLAY_SetCountDownMode();
+void DISPLAY_SetCountdownMinuteAdd();
+void DISPLAY_SetCountdownMinuteMinus();
+void DISPLAY_StartCountDown();
 #endif

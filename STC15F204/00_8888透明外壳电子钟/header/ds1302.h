@@ -58,4 +58,16 @@ unsigned char DS1302_GetMinute();
 
 unsigned char DS1302_GetSecond();
 
+// 设置倒计时，并开始倒计时
+void DS1302_StartCountDown(unsigned char cdMinute);
+
+// 取得最近设置的倒计时的分钟
+unsigned char DS1302_GetLastCdMinute();
+
+// 倒计时秒
+unsigned char DS1302_GetCdSecond();
+
+// 倒计时分
+unsigned char DS1302_GetCdMinute();
+
 #endif

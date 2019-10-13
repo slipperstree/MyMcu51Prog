@@ -33,6 +33,13 @@
     void doBtn1Click(){
         switch (DISPLAY_GetDispMode())
         {
+            case DISP_MODE_HHMM:
+                DISPLAY_ShowMMDD_forAWhile(100);
+                break;
+            case DISP_MODE_SET_COUNTDOWN_MINUTE:
+                // 倒计时分++
+                DISPLAY_SetCountdownMinuteAdd();
+                break;
             case DISP_MODE_SET_YEAR:
                 // 年++
                 DISPLAY_SetYearAdd();
@@ -58,7 +65,7 @@
                 break;
                 
             default:
-                DISPLAY_ShowMMDD_forAWhile(100);
+                DISPLAY_ShowHHMM();
                 break;
         }
     }
@@ -73,6 +80,10 @@
         // 根据当前状态切换到下一个状态
         switch (DISPLAY_GetDispMode())
         {
+            case DISP_MODE_HHMM:
+                // 进入年设置模式
+                DISPLAY_SetYearMode();
+                break;
             case DISP_MODE_SET_YEAR:
                 // 切换到月设置
                 DISPLAY_SetMonthMode();
@@ -93,10 +104,9 @@
                 // 全部设置完成，写入DS1302
                 DISPLAY_SetComplite();
                 break;
-
             default:
-                // 进入年设置模式
-                DISPLAY_SetYearMode();
+                // 默认回到正常显示时间状态
+                DISPLAY_ShowHHMM();
                 break;
         }
     }
@@ -105,6 +115,14 @@
     void doBtn2Click(){
         switch (DISPLAY_GetDispMode())
         {
+            case DISP_MODE_HHMM:
+                // 温度
+                DISPLAY_ShowTempreture_forAWhile(100);
+                break;
+            case DISP_MODE_SET_COUNTDOWN_MINUTE:
+                // 倒计时分--
+                DISPLAY_SetCountdownMinuteMinus();
+                break;
             case DISP_MODE_SET_YEAR:
                 // 年--
                 DISPLAY_SetYearMinus();
@@ -130,8 +148,8 @@
                 break;
 
             default:
-                // 温度
-                DISPLAY_ShowTempreture_forAWhile(100);
+                // 默认回到正常画面
+                DISPLAY_ShowHHMM();
                 break;
         }
     }
@@ -143,7 +161,21 @@
 
     // 按键2 长按（只触发一次）
     void doBtn2KeepPressStart(){
-        DISPLAY_ShowHHMM();
+        switch (DISPLAY_GetDispMode())
+        {
+            case DISP_MODE_HHMM:
+                // 进入倒计时设置模式
+                DISPLAY_SetCountDownMode();
+                break;
+            case DISP_MODE_SET_COUNTDOWN_MINUTE:
+                // 倒计时开始
+                DISPLAY_StartCountDown();
+                break;
+            
+            default:
+                DISPLAY_ShowHHMM();
+                break;
+        }
     }
 
     // 按键回调事件函数指针类型定义 （不要修改）

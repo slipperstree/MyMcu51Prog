@@ -14,7 +14,8 @@
 		"files.associations": {
 			"*.lua": "lua",
 			"stc89c52.h": "c",
-			"ht1621b.h": "c"
+			"ht1621b.h": "c",
+			"display.h": "c"
 		}
 	}
 }

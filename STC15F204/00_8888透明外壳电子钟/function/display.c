@@ -87,6 +87,8 @@ static_idata_uchar frameCounter = 0;
 
 idata uchar setYear, setMonth, setDay, setHour, setMinute, setSecond;
 
+idata uchar setCountdownMinute;
+
 //第1,2,4位用数字显示code
 static uchar code digit124[]={
 							~0x3f,~0x06,~0x5b,~0x4f,~0x66,~0x6d,~0x7d,~0x07,~0x7f,~0x6f, // 0-9
@@ -402,6 +404,45 @@ void DISPLAY_updateDisplay() {
 			dispDat[3] = flagIsFlash ? digit124[getGeWei(setMinute)]       : 0xff;
 			break;
 		
+		case DISP_MODE_SET_COUNTDOWN_MINUTE:
+			// 设置倒计时分钟[MM:SS]
+			// 左边两个分钟闪烁，右边的两位秒钟部分动态显示3根不停减少的横线表示正在设置倒计时
+			dispDat[0] = digit124[getShiWei(setCountdownMinute)];
+			dispDat[1] = digit124[getGeWei(setCountdownMinute)];// & 0x7f;
+			switch (frameCounter % 64)
+			{
+				case 0:
+					dispDat[2] = (~0x49);// & 0x7f;
+					dispDat[3] = (~0x49);
+					break;
+				case 15:
+					dispDat[2] = (~0x41);// & 0x7f;
+					dispDat[3] = (~0x48);
+					break;
+				case 31:
+					dispDat[2] = (~0x01);// & 0x7f;
+					dispDat[3] = (~0x08);
+					break;
+				case 47:
+					dispDat[2] = (~0x00);// & 0x7f;
+					dispDat[3] = (~0x00);
+					break;
+			}
+			break;
+		
+		case DISP_MODE_COUNTDOWN:
+			// 倒计时 MM:SS
+			dispDat[0] = digit124[getShiWei(DS1302_GetCdMinute())];
+			dispDat[1] = digit124[getGeWei(DS1302_GetCdMinute())] & 0x7f;// & (flagIsFlash ? 0x7f : 0xff);
+			dispDat[2] =   digit3[getShiWei(DS1302_GetCdSecond())] & 0x7f;// & (flagIsFlash ? 0xff : 0x7f);
+			dispDat[3] = digit124[getGeWei(DS1302_GetCdSecond())];
+			if (DS1302_GetCdMinute() == 0 && DS1302_GetCdSecond() == 0)
+			{
+				// 倒计时结束，BEEP
+				P15 = flagIsFlash;
+			}
+			break;
+		
 		case DISP_MODE_TEMPRETURE:
 			// 温度：25℃
 			dispDat[0] = digit124[getShiWei(ADC_GetTempreture())];
@@ -470,6 +511,8 @@ void showModeForAWhile(enum EnumDispMode mode, int interval) {
 }
 
 void DISPLAY_ShowHHMM(){
+	//强制关闭蜂鸣器
+	P15 = 1;
 	dispMode = DISP_MODE_HHMM;
 }
 
@@ -655,3 +698,17 @@ void DISPLAY_SetHourAdd(){ttflash = 0; flagIsFlash=FLAG_IS_FLASH_ON; setHour++;}
 void DISPLAY_SetHourMinus(){ttflash = 0; flagIsFlash=FLAG_IS_FLASH_ON; setHour--;}
 void DISPLAY_SetMinuteAdd(){ttflash = 0; flagIsFlash=FLAG_IS_FLASH_ON; setMinute++;}
 void DISPLAY_SetMinuteMinus(){ttflash = 0; flagIsFlash=FLAG_IS_FLASH_ON; setMinute--;}
+
+// 倒计时模式
+void DISPLAY_SetCountDownMode(){
+	setCountdownMinute = DS1302_GetLastCdMinute();
+	dispMode = DISP_MODE_SET_COUNTDOWN_MINUTE;
+}
+
+void DISPLAY_StartCountDown(){
+	DS1302_StartCountDown(setCountdownMinute);
+	dispMode = DISP_MODE_COUNTDOWN;
+}
+
+void DISPLAY_SetCountdownMinuteAdd(){setCountdownMinute++;}
+void DISPLAY_SetCountdownMinuteMinus(){setCountdownMinute--;}

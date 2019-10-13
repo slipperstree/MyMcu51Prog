@@ -65,7 +65,13 @@
 	sbit	RST_DS1302=P1^0;
 	sbit	IO_DS1302=P1^1;
 
-	static uchar code DS1302_ID[]="DaNKer";
+	// 首次使用1302进行初始化，并向1302内部RAM写入标识字符串。
+	// 每次启动上电都会检测这个内存区域有无这个标识字符串，如果没有则标识1302电池没电了或者是首次上电。
+	// 由于1302内部RAM仅有31个字节，从C0(C1)-FC(FD)。 (前面是写地址，括号里是读地址)
+	// 本程序其他功能使用了E0之后的RAM，所以，标识字符串不要超过8个字符。
+	#define ADDR_DS1302_ID_R 0xC1
+	#define ADDR_DS1302_ID_W 0xC0
+	static uchar code DS1302_ID[]="Mango";
 
 	//==============系统标志====================================================
 	static idata uchar clock_ctr=0;
@@ -81,6 +87,14 @@
 
 	static idata uchar alarm_shi;alarm_fen;
 	static idata uchar nian,yue,ri,shi,fen,miao;
+
+	// 倒计时用==================================
+	#define ADDR_COUNTDOWN_MINUTE_W   0xE0  // 上次倒计时的分钟数据，DS1302内部RAM的地址
+	#define ADDR_COUNTDOWN_MINUTE_R   0xE1
+	static idata char countdownSec;
+	static idata char countdownMinute;
+	static idata char countdownLastSec;
+	// 倒计时用==================================
 
 	// 十进制数转BCD码
 	uchar dec2Bcd(uchar hexData){
@@ -107,6 +121,7 @@
 		}
 		SCLK_DS1302=0;
 	}
+
 	unsigned char InptByte()	   //单片机接收一位数据 
 	{
 		unsigned char tdate,i;
@@ -125,42 +140,47 @@
 		SCLK_DS1302=0;
 		return(tdate);
 	}
-	void WriteByte(unsigned char add,unsigned char sdate)	 //单片机给某地址发送一位数据  
+
+	//向某地址发送一个字节数据
+	void WriteByte(unsigned char add,unsigned char sdate)
 	{
-		RST_DS1302=0;							 //复位脚为0，终止所有数据传输 
-		SCLK_DS1302=0;							 //时钟脚为0时复位脚才能被拉高 
+		RST_DS1302=0;		//复位脚为0，终止所有数据传输 
+		SCLK_DS1302=0;		//时钟脚为0时复位脚才能被拉高 
 		RST_DS1302=1;							 
-		SendByte(add);					 //先发送地址 
-		SendByte(sdate);				 //再发送数据  
+		SendByte(add);		//先发送地址 
+		SendByte(sdate);	//再发送数据  
 		SCLK_DS1302=0;
-		RST_DS1302=0;	
+		RST_DS1302=0;
 	}
-	unsigned char ReadByte(unsigned char add) 		     //单片机从某地址接收一位数据 
+
+	//从某地址读取一个字节数据
+	unsigned char ReadByte(unsigned char add)
 	{
 		unsigned char tdate;
 		RST_DS1302=0;
 		SCLK_DS1302=0;
-		RST_DS1302=1;										   //先发送地址 
-		SendByte(add);								   //再读数据  
-		tdate=InptByte();
+		RST_DS1302=1;
+		SendByte(add);		//先发送地址
+		tdate=InptByte();	//再读数据
 		SCLK_DS1302=1;
 		RST_DS1302=0;
 		return(tdate);
 	}
-	void WriteTime(unsigned char add,unsigned char tim)		 //给1302发送设置的时间 
+
+	//给1302发送设置的时间
+	void WriteTime(unsigned char add,unsigned char tim)		 
 	{
-		WriteByte(0x8e,0x00);					 //允许写操作 
-		WriteByte(add,tim);			 //先写地址，再写时间数据，时间数据放在数组中 
-		WriteByte(0x8e,0x80);
+		WriteByte(0x8e,0x00);		//解除写保护 
+		WriteByte(add,tim);			//先写地址，再写时间数据，时间数据放在数组中 
+		WriteByte(0x8e,0x80);		//恢复写保护（最高位为1即可）
 	}
-	unsigned char ReadTime(unsigned char add)			 //从1302读时间值  
+
+	//从1302读时间值
+	unsigned char ReadTime(unsigned char add)
 	{
-		unsigned char tme;
-		WriteByte(0x8e,0x00);
-		tme=ReadByte(add); 
-		WriteByte(0x8e,0x80);
-		return tme;
+		return ReadByte(add);
 	}
+
 	//==============================================================================
 	//	DS1302初使化，增加了初使化标识
 	//	先读DS1302的标识，如果读出标识正确，则说明1302已经初使化过，不再初使化
@@ -175,7 +195,7 @@
 		
 		while((*strp)&&(wrong_x<5))
 		{
-			temp=ReadTime(0xC1+(i<<1));
+			temp=ReadTime(ADDR_DS1302_ID_R+(i<<1));
 			if(temp!=*strp)		//如果读出来的数与ID码不等
 			{
 				i=0;
@@ -190,22 +210,25 @@
 		}
 		if(*strp)  
 		{
-			WriteTime(0xC0,0xaa);
+			// 先试一下储存内部RAM的功能是不是正常
+			// 先随便写入一个字节，比如0xAA
+			WriteTime(ADDR_DS1302_ID_W,0xaa);
 			delay_ms(10);
-			temp=ReadTime(0xC1);
+			// 然后读取出来，看是不是写入的0xAA
+			temp=ReadTime(ADDR_DS1302_ID_R);
 			if(temp!=0xaa)
 			{
 				while(1) // 这个检测在调试阶段应该注释掉，否则外部没有DS1302硬件的时候会一直停在这里
 				{
-					//TODO 无1302则进入报警
+					//TODO 如果不是写入的数据则表示没有外接DS1302，或硬件有问题。可以进行报警。
 				}		
 			}
-			WriteTime(0x80,0x00);	//秒
+			WriteTime(0x80,0x00);  //秒
 			WriteTime(0x82,0x00);  //分
 			WriteTime(0x84,0x12);  //时
 			WriteTime(0x86,0x01);  //日
 			WriteTime(0x88,0x01);  //月
-			WriteTime(0x8c,0x12); //年
+			WriteTime(0x8c,0x12);  //年
 			
 			clock_ctr=0;		//初使化时间控制，12/24小时制，AM/PM，闹钟使能
 			alarm_shi=12;
@@ -214,10 +237,12 @@
 			WriteTime(ALARM_ADDR+2,alarm_shi);
 			WriteTime(ALARM_ADDR+4,alarm_fen);
 			WriteTime(SecMod_WrADDR,0x00);			//秒钟显示模式
+
+			// 写入标识字符串，以便启动时检测1302有没有进行过初始化
 			strp=DS1302_ID;
 			while(*strp)
 			{
-				WriteTime(0xC0+(i<<1),*strp);
+				WriteTime(ADDR_DS1302_ID_W+(i<<1),*strp);
 				i++;
 				strp++;
 			}
@@ -249,6 +274,32 @@
 		get_alarm_data();            //读取闹钟信息
 	}
 
+	// 倒计时函数，需要被不停调用
+	void doCountDown(){
+
+		if (countdownMinute == 0 && countdownSec == 0)
+		{
+			// 已经倒计时结束，什么都不做
+		}
+		
+		if (miao != countdownLastSec)
+		{
+			countdownLastSec = miao;
+			countdownSec--;
+			if (countdownSec < 0)
+			{
+				if (countdownMinute > 0)
+				{
+					// 分钟还没到0，秒钟变59，分钟减一
+					countdownSec = 59;
+					countdownMinute--;
+				} else {
+					// 分钟已经减到0了，则秒钟保持0
+					countdownSec = 0;
+				}
+			}
+		}
+	}
 	//=========================================================================
 	//        读时间
 	//out:    nian,yue,ri,shi,fen,miao
@@ -261,6 +312,9 @@
 		static idata uchar i=0,temp1;
 		//unsigned char time_H,time_L,temp;
 		unsigned char temp;
+
+		//进行倒计时
+		doCountDown();
 
 		switch(i)
 		{
@@ -432,4 +486,28 @@ uchar DS1302_GetMinute(){
 
 uchar DS1302_GetSecond(){
 	return miao;
+}
+
+// 设置倒计时，并开始倒计时
+void DS1302_StartCountDown(uchar cdMinute){
+	countdownLastSec = miao;
+	countdownMinute = cdMinute;
+	countdownSec = 0;
+	
+	WriteTime(ADDR_COUNTDOWN_MINUTE_W, cdMinute);
+}
+
+// 取得最近设置的倒计时的分钟
+uchar DS1302_GetLastCdMinute(){
+	return ReadTime(ADDR_COUNTDOWN_MINUTE_R);
+}
+
+// 倒计时秒
+uchar DS1302_GetCdSecond(){
+	return countdownSec;
+}
+
+// 倒计时分
+uchar DS1302_GetCdMinute(){
+	return countdownMinute;
 }
