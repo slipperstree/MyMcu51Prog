@@ -4,10 +4,13 @@
 			"path": "."
 		},
 		{
-			"path": "/Users/chenling/Documents/我的坚果云/MCU/NuvotonMCU/N76E616_SampleCode_Keil_C51_V1.0.1"
+			"path": "/Users/chenling/Documents/我的坚果云/MCU/NuvotonMCU/N76E003_BSP_Keil_C51_V1.0.6"
 		},
 		{
-			"path": "/Users/chenling/Documents/我的坚果云/MCU/NuvotonMCU/N76E003_BSP_Keil_C51_V1.0.6"
+			"path": "/Users/chenling/Documents/我的坚果云/MCU/NuvotonMCU/N79E715_SampleCode_Keil_C51_V1.0.0"
+		},
+		{
+			"path": "/Users/chenling/Documents/我的坚果云/MCU/STM8/Lib/en.stsw-stm8069/STM8S_StdPeriph_Lib"
 		}
 	],
 	"settings": {
@@ -15,7 +18,14 @@
 			"*.lua": "lua",
 			"stc89c52.h": "c",
 			"ht1621b.h": "c",
-			"display.h": "c"
+			"display.h": "c",
+			"I2C_Master.C": "cpp",
+			"common_.h": "c",
+			"stm8_sys.h": "c",
+			"snake.h": "c",
+			"stdlib.h": "c",
+			"stm8s.h": "c",
+			"oled.h": "c"
 		}
 	}
 }
