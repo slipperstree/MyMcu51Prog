@@ -4,6 +4,7 @@
 enum EnumDispMode {
 	DISP_MODE_HHMM,
 	DISP_MODE_MMDD,
+	DISP_MODE_HHMM_MMDD,
 	DISP_MODE_YYYY,
 	DISP_MODE_MMSS,
 	DISP_MODE_ANI_SCROLL_LEFT,
@@ -45,6 +46,7 @@ void DISPLAY_setBrightness(unsigned char brightness);
 void DISPLAY_SetBreathMode(enum EnumBreathMode mode, enum EnumSpeed speed);
 
 void DISPLAY_ShowHHMM();
+void DISPLAY_ShowHHMM_MMDD();
 void DISPLAY_ShowMMDD();
 void DISPLAY_ShowYYYY();
 void DISPLAY_ShowMMSS();

@@ -5,7 +5,9 @@
 #include "../header/sensorAdc.h"
 #include "../header/common.h"
 
-enum EnumDispMode dispMode = DISP_MODE_HHMM;
+//默认显示模式
+//enum EnumDispMode dispMode = DISP_MODE_HHMM;
+enum EnumDispMode dispMode = DISP_MODE_HHMM_MMDD;
 enum EnumDispMode dispModeBefore = DISP_MODE_HHMM;
 
 // 数码管引脚连接 位
@@ -41,10 +43,14 @@ static_idata_uchar dispString[32];
 static uchar bdata flagByte;
 
 static_idata_uchar ttflash = 0;
+static_idata_uchar cntflash = 0;  //闪烁次数
 #define FLAG_IS_FLASH_ON   1
 #define FLAG_IS_FLASH_OFF  0
+#define FLAG_IS_SHOW_HHMM  1
+#define FLAG_IS_SHOW_MMDD  0
 sbit flagIsFlash = flagByte^0;				//闪烁状态标志
 sbit flagIsShowingForAWhile = flagByte^1;	//暂时显示状态标志
+sbit flagIsShowHHMMorMMDD = flagByte^2;		//HHMMorMMDD
 static_idata_int showForAWhileInterval = 0;			//暂时显示时间计数
 
 // 用于软PWM，控制亮度用 ----------------------------------------------------------------
@@ -247,6 +253,16 @@ void DISPLAY_updateDisplay() {
 	{
 		ttflash = 0;
 		flagIsFlash = ~flagIsFlash;
+
+		// 每闪烁一次计数加一
+		cntflash++;
+		if ( cntflash == 5 )
+		{
+			// 闪烁指定次数自动切换显示HHMM MMDD模式
+			flagIsShowHHMMorMMDD = ~flagIsShowHHMMorMMDD;
+			cntflash=1;
+		}
+		
 	}
 
 	// 向左滚动文字当前应该显示的位置
@@ -339,7 +355,25 @@ void DISPLAY_updateDisplay() {
 			dispDat[2] =   digit3[getShiWei(DS1302_GetDay())];
 			dispDat[3] = digit124[getGeWei(DS1302_GetDay())];
 			break;
-		
+
+		case DISP_MODE_HHMM_MMDD:
+			// 自动切换显示  HH:MM  MM.DD
+			if (flagIsShowHHMMorMMDD)
+			{
+				// 显示HH:MM
+				dispDat[0] = digit124[getShiWei(DS1302_GetHour())];
+				dispDat[1] = digit124[getGeWei(DS1302_GetHour())]		& (flagIsFlash ? 0x7f : 0xff);		
+				dispDat[2] =   digit3[getShiWei(DS1302_GetMinute())]	& (flagIsFlash ? 0x7f : 0xff);
+				dispDat[3] = digit124[getGeWei(DS1302_GetMinute())];
+			}else{
+				// 显示MM.DD
+				dispDat[0] = digit124[getShiWei(DS1302_GetMonth())];
+				dispDat[1] = digit124[getGeWei(DS1302_GetMonth())] 		& 0x7f;
+				dispDat[2] =   digit3[getShiWei(DS1302_GetDay())];
+				dispDat[3] = digit124[getGeWei(DS1302_GetDay())];
+			}
+			break;
+
 		case DISP_MODE_YYYY:
 			// 显示YYYY
 			dispDat[0] = digit124[2];
@@ -518,6 +552,12 @@ void DISPLAY_ShowHHMM(){
 
 void DISPLAY_ShowMMDD(){
 	dispMode = DISP_MODE_MMDD;
+}
+
+void DISPLAY_ShowHHMM_MMDD(){
+	//强制关闭蜂鸣器
+	P15 = 1;
+	dispMode = DISP_MODE_HHMM_MMDD;
 }
 
 // 显示一小会MMDD，然后切换回原来的显示状态

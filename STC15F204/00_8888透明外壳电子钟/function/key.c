@@ -3,6 +3,8 @@
 #include "../header/common.h"
 #include "../header/display.h"
 #include "../header/uart.h"
+#include "../header/QYMxFS.h"
+#include "../header/ds1302.h"
 
 // ******* 根据硬件电气连接修改下列定义 ***********************************
 
@@ -20,10 +22,10 @@
 // ******* 根据需要修改下列用于判断单击，双击有效的时间长短 ***********************************
     
     //不需要响应双击时间时可放开本句(可以减少代码体积)
-    //#define NOT_USE_DBCLICK                       
+    #define NOT_USE_DBCLICK                       
     
     #define TICK_WAIT_CLICK_END         0x2500    //判断单击用，按下和弹起之间不能超过多久
-    #define TICK_WAIT_DBCLICK_START     0x0200    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）
+    #define TICK_WAIT_DBCLICK_START     0x0050    //判断双击用，两次单击之间不能超过多久（如果判断成双击则单击无效）
     #define TICK_KEEPDOWN               0x4000    //判断按住不放用，按下以后需要持续多久
     #define TICK_KEEPDOWN_NEXT          0x0500    //按住不放的时候，每隔多久自动触发一次按住不放的事件
 
@@ -34,7 +36,9 @@
         switch (DISPLAY_GetDispMode())
         {
             case DISP_MODE_HHMM:
-                DISPLAY_ShowMMDD_forAWhile(100);
+            case DISP_MODE_HHMM_MMDD:
+                //DISPLAY_ShowMMDD_forAWhile(100);
+                QYMxFS_SendCMD_NOCHECK(0x0F , 0, 03, DS1302_GetSecond() % 10);
                 break;
             case DISP_MODE_SET_COUNTDOWN_MINUTE:
                 // 倒计时分++
@@ -65,15 +69,16 @@
                 break;
                 
             default:
-                DISPLAY_ShowHHMM();
+                //DISPLAY_ShowHHMM();
+                DISPLAY_ShowHHMM_MMDD();
                 break;
         }
     }
 
-    // // 按键1 双击
-    // void doBtn1DBClick(){
-    //     DISPLAY_ShowMMSS_forAWhile(30);
-    // }
+    // 按键1 双击
+    void doBtn1DBClick(){
+        
+    }
 
     // 按键1 长按（只触发一次）
     void doBtn1KeepPressStart(){
@@ -81,6 +86,7 @@
         switch (DISPLAY_GetDispMode())
         {
             case DISP_MODE_HHMM:
+            case DISP_MODE_HHMM_MMDD:
                 // 进入年设置模式
                 DISPLAY_SetYearMode();
                 break;
@@ -106,7 +112,26 @@
                 break;
             default:
                 // 默认回到正常显示时间状态
-                DISPLAY_ShowHHMM();
+                //DISPLAY_ShowHHMM();
+                DISPLAY_ShowHHMM_MMDD();
+                break;
+        }
+    }
+
+    // 按键1 长按连击（触发多次）
+    void doBtn1KeepPressKeepping(){
+        switch (DISPLAY_GetDispMode())
+        {
+            case DISP_MODE_SET_YEAR:
+            case DISP_MODE_SET_MONTH:
+            case DISP_MODE_SET_DAY:
+            case DISP_MODE_SET_HOUR:
+            case DISP_MODE_SET_MINUTE:
+            case DISP_MODE_SET_COUNTDOWN_MINUTE:
+                doBtn1Click();
+                break;
+            
+            default:
                 break;
         }
     }
@@ -116,8 +141,10 @@
         switch (DISPLAY_GetDispMode())
         {
             case DISP_MODE_HHMM:
+            case DISP_MODE_HHMM_MMDD:
                 // 温度
-                DISPLAY_ShowTempreture_forAWhile(100);
+                //DISPLAY_ShowTempreture_forAWhile(100);
+                QYMxFS_SendCMD_NOCHECK(0x0F , 0, 05, DS1302_GetSecond() % 10);
                 break;
             case DISP_MODE_SET_COUNTDOWN_MINUTE:
                 // 倒计时分--
@@ -149,21 +176,23 @@
 
             default:
                 // 默认回到正常画面
-                DISPLAY_ShowHHMM();
+                //DISPLAY_ShowHHMM();
+                DISPLAY_ShowHHMM_MMDD();
                 break;
         }
     }
 
-    // // 按键2 双击
-    // void doBtn2DBClick(){
-    //     DISPLAY_ShowMMDD_forAWhile(30);
-    // }
+    // 按键2 双击
+    void doBtn2DBClick(){
+        
+    }
 
     // 按键2 长按（只触发一次）
     void doBtn2KeepPressStart(){
         switch (DISPLAY_GetDispMode())
         {
             case DISP_MODE_HHMM:
+            case DISP_MODE_HHMM_MMDD:
                 // 进入倒计时设置模式
                 DISPLAY_SetCountDownMode();
                 break;
@@ -173,7 +202,26 @@
                 break;
             
             default:
-                DISPLAY_ShowHHMM();
+                //DISPLAY_ShowHHMM();
+                DISPLAY_ShowHHMM_MMDD();
+                break;
+        }
+    }
+
+    // 按键2 长按连击（触发多次）
+    void doBtn2KeepPressKeepping(){
+        switch (DISPLAY_GetDispMode())
+        {
+            case DISP_MODE_SET_YEAR:
+            case DISP_MODE_SET_MONTH:
+            case DISP_MODE_SET_DAY:
+            case DISP_MODE_SET_HOUR:
+            case DISP_MODE_SET_MINUTE:
+            case DISP_MODE_SET_COUNTDOWN_MINUTE:
+                doBtn2Click();
+                break;
+            
+            default:
                 break;
         }
     }
@@ -187,6 +235,7 @@
                     pBtnEventFunc fnClick, 
                     pBtnEventFunc fnDBClick, 
                     pBtnEventFunc fnKeepPressStart, 
+                    pBtnEventFunc fnKeepPressKeepping, 
                     uchar btnIdx);
     
     // 主函数main里要循环调用该函数（函数名不可以修改，内容根据需要自行增减）
@@ -202,8 +251,8 @@
         // 参数4：按键发生【按住不放开始事件】】时希望被调用的函数名
         // 参数5：idx++不用改
         // 根据业务的需要，用不上的事件直接传递 0 即可
-        keyScanCommon(BTN1, doBtn1Click, 0, doBtn1KeepPressStart, idx++);
-        keyScanCommon(BTN2, doBtn2Click, 0, doBtn2KeepPressStart, idx++);
+        keyScanCommon(BTN1, doBtn1Click, 0, doBtn1KeepPressStart, 0, idx++);
+        keyScanCommon(BTN2, doBtn2Click, 0, doBtn2KeepPressStart, 0, idx++);
         //keyScanCommon(BTN3, doBtn3Click,             0, idx++); // 不需要双击事件
         //keyScanCommon(BTN4,           0, doBtn4DBClick, idx++); // 不需要单击事件
         //....
@@ -241,12 +290,14 @@ void KEY_init(){
 // fnClick : 单击事件回调函数（判定发生单击事件的时候调用指定函数）
 // fnDBClick : 双击事件回调函数（判定发生双击事件的时候调用指定函数）
 // fnKeepPressStart : 按住不放开始事件回调函数（判定发生按住不放开始事件的时候调用指定函数）
+// fnKeepPressKeepping : 按住不放并保持住产生连击事件回调函数（会反复触发直到松手）
 // btnIdx : 按键编号（从0开始）不同的按键不重复即可，目的是每个按键使用的状态变量不可以复用，通过数组下标各自分开
 // 根据业务的需要，用不上的事件直接传递 0 即可
 void keyScanCommon(uchar btnUpDown, 
                     pBtnEventFunc fnClick, 
                     pBtnEventFunc fnDBClick, 
-                    pBtnEventFunc fnKeepPressStart, 
+                    pBtnEventFunc fnKeepPressStart,
+                    pBtnEventFunc fnKeepPressKeepping, 
                     uchar btnIdx){
     
     // 按键按下 且 之前为松开状态：【按键刚刚被按下】
@@ -261,15 +312,32 @@ void keyScanCommon(uchar btnUpDown,
 
     // 按键按下 且 为等待单击完成状态：【按键按下后并保持中】
     else if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_CLICK_END){
-        // 计数
-        if (ttWaitKeyClickEnd[btnIdx] < 0xffff) {ttWaitKeyClickEnd[btnIdx]++;}
+        if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_CLICK_END){
+            // 计数
+            if (ttWaitKeyClickEnd[btnIdx] < 0xffff) {ttWaitKeyClickEnd[btnIdx]++;}
 
-        // 判断是否达到按住不放事件的要求时间
-        if (ttWaitKeyClickEnd[btnIdx] >= TICK_KEEPDOWN) {
-            // 切换到等待按住不放完成状态，并触发按住不放开始事件（该事件只触发一次，连续按住不放时会多次重复触发另外一个事件，非本事件）
-            ttWaitKeyClickEnd[btnIdx] = 0;
-            btnStatus[btnIdx] = STS_WAIT_KEEP_PRESS_END;
-            if (fnKeepPressStart != 0) fnKeepPressStart();
+            // 判断是否达到按住不放事件的要求时间
+            if (ttWaitKeyClickEnd[btnIdx] >= TICK_KEEPDOWN) {
+                // 切换到等待按住不放完成状态，并触发按住不放开始事件（该事件只触发一次，连续按住不放时会多次重复触发另外一个事件，非本事件）
+                ttWaitKeyClickEnd[btnIdx] = 0;
+                btnStatus[btnIdx] = STS_WAIT_KEEP_PRESS_END;
+                if (fnKeepPressStart != 0) fnKeepPressStart();
+            }
+        }
+    }
+
+    // 按键按下 且 为等待按住不放完成状态：【按键长按并保持中，响应连击事件】
+    else if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_KEEP_PRESS_END){
+        if (btnUpDown == KEY_DOWN && btnStatus[btnIdx] == STS_WAIT_KEEP_PRESS_END){
+            // 计数
+            if (ttWaitKeyClickEnd[btnIdx] < 0xffff) {ttWaitKeyClickEnd[btnIdx]++;}
+
+            // 判断是否达到按住不放连击事件的要求时间
+            if (ttWaitKeyClickEnd[btnIdx] >= TICK_KEEPDOWN_NEXT) {
+                // 触发连击事件
+                ttWaitKeyClickEnd[btnIdx] = 0;
+                if (fnKeepPressKeepping != 0) fnKeepPressKeepping();
+            }
         }
     }
 
@@ -309,14 +377,16 @@ void keyScanCommon(uchar btnUpDown,
 
     // 按键松开 且 为等待双击事件开始状态：【单击结束后的一段时间内】
     else if (btnUpDown == KEY_UP && btnStatus[btnIdx] == STS_WAIT_DBCLICK_START){
-        // 计数(最大255)
-        if (ttWaitKeyDBClickStart[btnIdx] < 0xffff) {ttWaitKeyDBClickStart[btnIdx]++;}
+        if (btnUpDown == KEY_UP && btnStatus[btnIdx] == STS_WAIT_DBCLICK_START){
+            // 计数(最大255)
+            if (ttWaitKeyDBClickStart[btnIdx] < 0xffff) {ttWaitKeyDBClickStart[btnIdx]++;}
 
-        if (ttWaitKeyDBClickStart[btnIdx] > TICK_WAIT_DBCLICK_START)
-        {
-            // 在一定时间内无按键按下，不再等待双击，单击生效，调用单击回调函数
-            btnStatus[btnIdx] = STS_WAIT_CLICK_START;
-            if (fnClick != 0) fnClick();
+            if (ttWaitKeyDBClickStart[btnIdx] > TICK_WAIT_DBCLICK_START)
+            {
+                // 在一定时间内无按键按下，不再等待双击，单击生效，调用单击回调函数
+                btnStatus[btnIdx] = STS_WAIT_CLICK_START;
+                if (fnClick != 0) fnClick();
+            }
         }
     }
 
