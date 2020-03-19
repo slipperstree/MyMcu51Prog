@@ -1,6 +1,7 @@
 #include "../header/uart.h"
 #include "../header/ds1302.h"
 #include "../header/common.h"
+#include "../header/QYMxFS.h"
 
 #define FOSC 11059200L      //System frequency
 #define BAUD 9600           //UART baudrate
@@ -361,6 +362,9 @@
 					break;
 			}
 		}
+
+		// ”Ô“Ùƒ£øÈ”√
+		QYMxFS_rcvscan(rcvChar);
 	}
 
 	void doCommand(uchar cmd){

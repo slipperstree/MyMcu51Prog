@@ -38,7 +38,10 @@
             case DISP_MODE_HHMM:
             case DISP_MODE_HHMM_MMDD:
                 //DISPLAY_ShowMMDD_forAWhile(100);
-                QYMxFS_SendCMD_NOCHECK(0x0F , 0, 03, DS1302_GetSecond() % 10);
+                //QYMxFS_SendCMD_NOCHECK(0x0F , 0, 03, DS1302_GetSecond() % 10);
+                QYMxFS_setPeople(11);
+                QYMxFS_setMode( QYMxFS_MODE_02_REAL );
+                QYMxFS_speek(DS1302_GetHour(), DS1302_GetMinute());
                 break;
             case DISP_MODE_SET_COUNTDOWN_MINUTE:
                 // 倒计时分++
@@ -144,7 +147,10 @@
             case DISP_MODE_HHMM_MMDD:
                 // 温度
                 //DISPLAY_ShowTempreture_forAWhile(100);
-                QYMxFS_SendCMD_NOCHECK(0x0F , 0, 05, DS1302_GetSecond() % 10);
+                //QYMxFS_SendCMD_NOCHECK(0x0F , 0, 05, DS1302_GetSecond() % 10);
+                QYMxFS_setPeople(3);
+                QYMxFS_setMode( QYMxFS_MODE_01_SIMPLE );
+                QYMxFS_speek(DS1302_GetHour(), DS1302_GetMinute());
                 break;
             case DISP_MODE_SET_COUNTDOWN_MINUTE:
                 // 倒计时分--
