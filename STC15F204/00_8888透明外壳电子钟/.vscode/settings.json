@@ -7,7 +7,8 @@
         "ds1302.h": "c",
         "uart.h": "c",
         "sensoradc.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "LCD_V1.0.C": "cpp"
     },
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,

@@ -527,7 +527,7 @@ void DISPLAY_SetBreathMode(enum EnumBreathMode mode, enum EnumSpeed speed){
 }
 
 // 显示一小会指定mode，然后切换回原来的显示状态
-void showModeForAWhile(enum EnumDispMode mode, int interval) {
+void DISPLAY_ShowModeForAWhile(enum EnumDispMode mode, int interval) {
 
 	// 当前为非暂时显示状态才允许切换
 	if (flagIsShowingForAWhile == 0)
@@ -562,7 +562,7 @@ void DISPLAY_ShowHHMM_MMDD(){
 
 // 显示一小会MMDD，然后切换回原来的显示状态
 void DISPLAY_ShowMMDD_forAWhile(int interval){
-	showModeForAWhile(DISP_MODE_MMDD, interval);
+	DISPLAY_ShowModeForAWhile(DISP_MODE_MMDD, interval);
 }
 
 void DISPLAY_ShowYYYY(){
@@ -571,7 +571,7 @@ void DISPLAY_ShowYYYY(){
 
 // 显示一小会YYYY，然后切换回原来的显示状态
 void DISPLAY_ShowYYYY_forAWhile(int interval){
-	showModeForAWhile(DISP_MODE_YYYY, interval);
+	DISPLAY_ShowModeForAWhile(DISP_MODE_YYYY, interval);
 }
 
 void DISPLAY_ShowMMSS(){
@@ -580,11 +580,11 @@ void DISPLAY_ShowMMSS(){
 
 // 显示一小会MMSS，然后切换回原来的显示状态
 void DISPLAY_ShowMMSS_forAWhile(int interval){
-	showModeForAWhile(DISP_MODE_MMSS, interval);
+	DISPLAY_ShowModeForAWhile(DISP_MODE_MMSS, interval);
 }
 
 void DISPLAY_ShowTempreture_forAWhile(int interval){
-	showModeForAWhile(DISP_MODE_TEMPRETURE, interval);
+	DISPLAY_ShowModeForAWhile(DISP_MODE_TEMPRETURE, interval);
 }
 
 enum EnumDispMode DISPLAY_GetDispMode(){
@@ -725,7 +725,7 @@ void DISPLAY_SetComplite(){
 	DISPLAY_ShowAniScrollLeft(
 		dispString, 0, My_strlen(dispString)-8, 
 		DISPLAY_SPEED_LV_3,
-		DISP_MODE_HHMM);
+		DISP_MODE_HHMM_MMDD);
 }
 
 void DISPLAY_SetYearAdd(){ttflash = 0; flagIsFlash=FLAG_IS_FLASH_ON; setYear++;}

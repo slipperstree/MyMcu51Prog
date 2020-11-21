@@ -41,6 +41,12 @@ xdata uchar totalSoundCnt = 0;
 xdata uchar nowSoundIdx = 0;
 // 声音文件夹（也就是选择不同的人声）
 xdata uchar peopleNo = 0;
+// 音量（0-30）
+xdata uchar mVolume = 18;
+// 忙标志
+#define BUSY_YES    1
+#define BUSY_NO     0
+xdata uchar mBusy = BUSY_NO;
 
 // 播放完成后模块返回的串口通知消息
 // 7E       : 消息开始，固定
@@ -56,6 +62,12 @@ uchar code RESULT_PLAY_SUCCECSS[] = {
     0x7E, 0xFF, 0x06, 0x3D, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEF
 };
 xdata uchar rcvCharCnt = 0;
+
+// 模块初始化, 需要在main中调用一次
+void QYMxFS_init(){
+    
+    QYMxFS_setVolume(mVolume);
+}
 
 // Uart模块里接收到一个数据时调用该函数
 void QYMxFS_rcvscan(unsigned char rcvChar){
@@ -86,6 +98,10 @@ void QYMxFS_rcvscan(unsigned char rcvChar){
     }
 }
 
+// CMD:控制指令
+// feedback:是否需要反馈
+// dat1:datah
+// dat2:datal
 void QYMxFS_SendCMD_NOCHECK(
     unsigned char CMD,
     unsigned char feedback,
@@ -126,16 +142,27 @@ void addSoundList4Play(unsigned char sndNo){
 
 void QYMxFS_speek(unsigned char h, unsigned char m){
 
+    // if (mBusy == BUSY_YES) return;
+
     // 清除播放位置，下次重头播放
     totalSoundCnt = 0;
     nowSoundIdx = 0;
     rcvCharCnt = 0;
 
+    // //根据时间调整音量大小
+    // if (h>7 && h<19)
+    // {
+    //     QYMxFS_setVolume(25);
+
+    // } else {
+    //     QYMxFS_setVolume(18);
+    // }
+
     switch (mode)
     {
     case QYMxFS_MODE_02_REAL:
         //报提示音
-        addSoundList4Play( MODE_02_SND_090_TISHIYIN );
+        //addSoundList4Play( MODE_02_SND_090_TISHIYIN );
         
         //报提示语
         addSoundList4Play( MODE_02_SND_091_TISHIYU );
@@ -209,10 +236,20 @@ void QYMxFS_speek(unsigned char h, unsigned char m){
         break;
     }
 
-    
-
     //开始播放第一条
     QYMxFS_sndPlaySound(bufSoundNo4Play[nowSoundIdx++]);
+}
+
+xdata uchar lastHour = 25;
+void QYMxFS_speekEveryHour(unsigned char h, unsigned char m){
+    if (m == 0 && h != lastHour)
+    {
+        QYMxFS_setPeople(11);
+        QYMxFS_setMode( QYMxFS_MODE_02_REAL );
+
+        QYMxFS_speek(h, m);
+        lastHour = h;
+    }
 }
 
 void QYMxFS_setPeople(unsigned char pNo){
@@ -221,4 +258,16 @@ void QYMxFS_setPeople(unsigned char pNo){
 
 void QYMxFS_setMode(unsigned char pMode){
     mode = pMode;
+}
+
+// 设置音量（0-30 30最大 0静音）
+void QYMxFS_setVolume(unsigned char pVolume){
+    mVolume = pVolume;
+
+    // if (mBusy == BUSY_YES) return;
+    
+    // mBusy = BUSY_YES;
+    QYMxFS_SendCMD_NOCHECK(0x06 , 0, 0, mVolume);
+    // delay_ms(50);
+    // mBusy = BUSY_NO;
 }

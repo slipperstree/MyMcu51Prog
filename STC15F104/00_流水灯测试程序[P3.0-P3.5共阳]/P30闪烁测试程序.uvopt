@@ -172,10 +172,10 @@
       <FileType>1</FileType>
       <tvExp>1</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>43</ColumnNumber>
+      <ColumnNumber>1</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>6</TopLine>
-      <CurrentLine>19</CurrentLine>
+      <TopLine>21</TopLine>
+      <CurrentLine>37</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\main.c</PathWithFileName>
       <FilenameWithoutPath>main.c</FilenameWithoutPath>
@@ -1541,9 +1541,15 @@
       <Documents>
         <Doc>
           <Name>.\main.c</Name>
-          <ColumnNumber>43</ColumnNumber>
-          <TopLine>6</TopLine>
-          <CurrentLine>19</CurrentLine>
+          <ColumnNumber>1</ColumnNumber>
+          <TopLine>21</TopLine>
+          <CurrentLine>37</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>STC15104E.H</Name>
+          <ColumnNumber>4</ColumnNumber>
+          <TopLine>37</TopLine>
+          <CurrentLine>51</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>

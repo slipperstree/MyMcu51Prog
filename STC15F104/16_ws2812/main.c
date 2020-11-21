@@ -3,15 +3,16 @@
 /*修改日期：2015.5.2
 /*版    本：V1.0
 /*程序功能：用51单片机控制ws2812 RGB输出，显示全色彩
-/*备        注：51单片机晶振24M
+/*备        注：51单片机晶振24M(STC15L104E测试通过，其他型号需要根据实际需要调整延时部分)
 /********************************************************/
  
-#include<reg52.h>
+//#include<reg52.h>
+#include "STC15104E.h"
 #include "intrins.h"
  
 sbit WS2812 = P3^5;
  
-#define numLEDs 8   //灯的个数
+#define numLEDs 10   //灯的个数
 unsigned char buf_R[numLEDs] = {0};//颜色缓存
 unsigned char buf_G[numLEDs] = {0};
 unsigned char buf_B[numLEDs] = {0};
@@ -31,6 +32,7 @@ void HAL_Delay(unsigned int t)
  
 	 
 //复位延时
+//经过逻辑分析仪调试的的延时
 void Delay50us()		//@22.1184MHz
 {
 	unsigned char i, j;
@@ -38,7 +40,7 @@ void Delay50us()		//@22.1184MHz
 	_nop_();
 	_nop_();
 	i = 2;
-	j = 15;
+	j = 150;
 	do
 	{
 		while (--j);
@@ -47,12 +49,16 @@ void Delay50us()		//@22.1184MHz
  
  
 //1码，高电平850ns 低电平400ns 误差正负150ns
+unsigned char speed_div_12 = 12;
 void RGB_Set_Up()
 {
 		WS2812 = 1;
-	  //经过逻辑分析仪调试的的延时
+	  
+		//经过逻辑分析仪调试的的延时
 		_nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); 
-	  _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_();_nop_(); 
+		//_nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_();_nop_();
+		_nop_(); _nop_(); _nop_(); _nop_(); _nop_();
+		
 		WS2812 = 0;
 }
  
@@ -60,8 +66,11 @@ void RGB_Set_Up()
 void RGB_Set_Down()
 {
 		WS2812 = 1;
-	  //经过逻辑分析仪调试的的延时
-		_nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_();  
+		
+		//经过逻辑分析仪调试的的延时
+		//_nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); _nop_();
+		_nop_(); _nop_(); _nop_(); _nop_(); _nop_(); 
+	
 		WS2812 = 0;
 }
  
@@ -288,16 +297,25 @@ void colorWipe(unsigned long c, unsigned int wait)
 }
  
 void main()
-{
+{	
+	//CLK_DIV = 1; // RC(12M)/2
 	  
 		while(1)
 		{
-			  rainbow(45);
-        rainbowCycle(40);
-        theaterChase(Color(0,0,255),80); // Blue
-			  theaterChase(Color(0,255,0),80); // Blue
-			  theaterChase(Color(255,0,0),80); // Blue
-    		theaterChaseRainbow(40);
-				colorWipe(255,255);
+			// RGB_Set_Down();
+			
+			// Delay50us();
+			
+			// RGB_Set_Up();
+			
+			// Delay50us();
+			
+			//rainbow(45);
+			//rainbowCycle(40);
+			//theaterChase(Color(0,0,100),80); // Blue
+			//theaterChase(Color(0,255,0),80); // Blue
+			//theaterChase(Color(255,0,0),80); // Blue
+			//theaterChaseRainbow(40);
+			//colorWipe(255,255);
 		}
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_proj.xsd">
 
-  <SchemaVersion>1.1</SchemaVersion>
+  <SchemaVersion>1.0</SchemaVersion>
 
   <Header>### uVision Project, (C) Keil Software</Header>
 
@@ -12,14 +12,14 @@
       <ToolsetName>MCS-51</ToolsetName>
       <TargetOption>
         <TargetCommonOption>
-          <Device>STC15W408AS</Device>
-          <Vendor>STC</Vendor>
-          <Cpu>IRAM(0-0xFF) XRAM(0-0xFF) IROM(0-0x1FF8) CLOCK(35000000) MODP2</Cpu>
+          <Device>AT89C52</Device>
+          <Vendor>Atmel</Vendor>
+          <Cpu>IRAM(0-0xFF) IROM(0-0x1FFF) CLOCK(24000000)</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile>"LIB\STARTUP.A51" ("Standard 8051 Startup Code")</StartupFile>
           <FlashDriverDll></FlashDriverDll>
-          <DeviceId>62744</DeviceId>
-          <RegisterFile>STC15F2K60S2.H</RegisterFile>
+          <DeviceId>2980</DeviceId>
+          <RegisterFile>REGX52.H</RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
           <Asm></Asm>
@@ -29,13 +29,12 @@
           <SLE66CMisc></SLE66CMisc>
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile></SFDFile>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
           <IncludePath></IncludePath>
           <LibPath></LibPath>
-          <RegisterFilePath>STC\</RegisterFilePath>
-          <DBRegisterFilePath>STC\</DBRegisterFilePath>
+          <RegisterFilePath>Atmel\</RegisterFilePath>
+          <DBRegisterFilePath>Atmel\</DBRegisterFilePath>
           <TargetStatus>
             <Error>0</Error>
             <ExitCodeStop>0</ExitCodeStop>
@@ -61,8 +60,6 @@
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
-            <nStopU1X>0</nStopU1X>
-            <nStopU2X>0</nStopU2X>
           </BeforeCompile>
           <BeforeMake>
             <RunUserProg1>0</RunUserProg1>
@@ -103,11 +100,11 @@
           <SimDllName>S8051.DLL</SimDllName>
           <SimDllArguments></SimDllArguments>
           <SimDlgDll>DP51.DLL</SimDlgDll>
-          <SimDlgDllArguments>-pDP8051</SimDlgDllArguments>
+          <SimDlgDllArguments>-p52</SimDlgDllArguments>
           <TargetDllName>S8051.DLL</TargetDllName>
           <TargetDllArguments></TargetDllArguments>
           <TargetDlgDll>TP51.DLL</TargetDlgDll>
-          <TargetDlgDllArguments>-p51</TargetDlgDllArguments>
+          <TargetDlgDllArguments>-p52</TargetDlgDllArguments>
         </DllOption>
         <DebugOption>
           <OPTHX>
@@ -137,7 +134,6 @@
             <RestoreMemoryDisplay>1</RestoreMemoryDisplay>
             <RestoreFunctions>0</RestoreFunctions>
             <RestoreToolbox>1</RestoreToolbox>
-            <RestoreTracepoints>0</RestoreTracepoints>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
           <TargetSelection>-1</TargetSelection>
@@ -166,14 +162,13 @@
             <Capability>0</Capability>
             <DriverSelection>-1</DriverSelection>
           </Flash1>
-          <bUseTDR>0</bUseTDR>
           <Flash2></Flash2>
           <Flash3></Flash3>
           <Flash4></Flash4>
         </Utilities>
         <Target51>
           <Target51Misc>
-            <MemoryModel>2</MemoryModel>
+            <MemoryModel>0</MemoryModel>
             <RTOS>0</RTOS>
             <RomSize>2</RomSize>
             <DataHold>0</DataHold>
@@ -183,11 +178,11 @@
             <UseMultipleDPTR>0</UseMultipleDPTR>
             <UseOnchipXram>0</UseOnchipXram>
             <HadIRAM>1</HadIRAM>
-            <HadXRAM>1</HadXRAM>
+            <HadXRAM>0</HadXRAM>
             <HadIROM>1</HadIROM>
             <Moda2>0</Moda2>
             <Moddp2>0</Moddp2>
-            <Modp2>1</Modp2>
+            <Modp2>0</Modp2>
             <Mod517dp>0</Mod517dp>
             <Mod517au>0</Mod517au>
             <Mode2>0</Mode2>
@@ -258,7 +253,7 @@
               <IRO>
                 <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x1ff9</Size>
+                <Size>0x2000</Size>
               </IRO>
               <IRA>
                 <Type>0</Type>
@@ -268,7 +263,7 @@
               <XRA>
                 <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x100</Size>
+                <Size>0x0</Size>
               </XRA>
               <XRA512>
                 <Type>0</Type>
@@ -289,7 +284,7 @@
             <uAregs>0</uAregs>
             <UseInterruptVector>1</UseInterruptVector>
             <Fuzzy>3</Fuzzy>
-            <Optimize>7</Optimize>
+            <Optimize>8</Optimize>
             <WarningLevel>2</WarningLevel>
             <SizeSpeed>1</SizeSpeed>
             <ObjectExtend>1</ObjectExtend>
@@ -385,16 +380,6 @@
               <FileName>key.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\function\key.c</FilePath>
-            </File>
-            <File>
-              <FileName>sensorAdc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\function\sensorAdc.c</FilePath>
-            </File>
-            <File>
-              <FileName>QYMxFS.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\function\QYMxFS.c</FilePath>
             </File>
           </Files>
         </Group>

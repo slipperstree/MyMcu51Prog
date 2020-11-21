@@ -51,6 +51,9 @@ void DISPLAY_ShowMMDD();
 void DISPLAY_ShowYYYY();
 void DISPLAY_ShowMMSS();
 
+// 显示一小会指定MODE，然后切换回原来的显示状态
+void DISPLAY_ShowModeForAWhile(enum EnumDispMode mode, int interval);
+
 // 显示一小会MMDD，然后切换回原来的显示状态
 void DISPLAY_ShowMMDD_forAWhile(int interval);
 // 显示一小会YYYY，然后切换回原来的显示状态

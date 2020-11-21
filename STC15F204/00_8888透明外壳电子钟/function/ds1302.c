@@ -192,6 +192,9 @@
 		strp=DS1302_ID;
 		WriteTime(0x8e,0x00);
 		WriteTime(0x90,0x55);		//关闭电池充电功能
+
+		// 初始化分钟数据为61，避免刚上电误报整点报时
+		fen = 61;
 		
 		while((*strp)&&(wrong_x<5))
 		{

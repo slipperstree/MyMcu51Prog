@@ -12,6 +12,7 @@
 #include "header/ds1302.h"
 #include "header/uart.h"
 #include "header/sensorAdc.h"
+#include "header/QYMxFS.h"
 
 int tt_getTime = 0;
 int tt_refresh = 0;
@@ -32,6 +33,7 @@ main()
 	UART_init();
 	KEY_init();
 	ADC_init();
+	QYMxFS_init();
 
 	// 开启呼吸效果
 	//DISPLAY_SetBreathMode(DISPLAY_BREATH_MODE_ON, DISPLAY_SPEED_LV_5);
@@ -67,6 +69,9 @@ main()
 
 			DS1302_GetTimeFromDS1302();
 
+			//整点报时(函数自己会判断是否整点，且不会重复报时)
+			QYMxFS_speekEveryHour(DS1302_GetHour(), DS1302_GetMinute());
+
 			//根据上面的GetTime取到的数据(定义再DS302.h里面的全局变量shi fen miao nian yue ri等)更新显示用的数据
 			//该处仅仅更新内存里的数据(定义在display.h里的 d1 d2 d3 d4)，真正刷新画面是在后面的showPosition函数里做的）
 			DISPLAY_updateDisplay();
@@ -74,7 +79,7 @@ main()
 
 		// 刷新画面 ----------------
 		tt_refresh++;
-		if (tt_refresh >= 5)
+		if (tt_refresh >= 2)
 		{
 			tt_refresh = 0;
 
