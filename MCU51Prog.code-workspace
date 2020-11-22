@@ -2,15 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "/Users/chenling/Documents/我的坚果云/MCU/NuvotonMCU/N76E003_BSP_Keil_C51_V1.0.6"
-		},
-		{
-			"path": "/Users/chenling/Documents/我的坚果云/MCU/NuvotonMCU/N79E715_SampleCode_Keil_C51_V1.0.0"
-		},
-		{
-			"path": "/Users/chenling/Documents/我的坚果云/MCU/STM8/Lib/en.stsw-stm8069/STM8S_StdPeriph_Lib"
 		}
 	],
 	"settings": {
