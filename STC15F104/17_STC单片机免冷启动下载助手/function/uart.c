@@ -385,7 +385,7 @@
 				// 断电一小会再上电
 				// 采用的是PNP三极管做开关，IO输出低电平时导通，注意这里跟指示灯LED的通断刚好相反
 				LED = 0; ONOFF = 1;
-				Delay100ms_STC15Fxx_110592M(1);
+				Delay100ms_STC15Fxx_110592M(5);
 				LED = 1; ONOFF = 0;
 				break;
 			case '0':

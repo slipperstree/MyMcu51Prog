@@ -16,7 +16,8 @@
 			"snake.h": "c",
 			"stdlib.h": "c",
 			"stm8s.h": "c",
-			"oled.h": "c"
+			"oled.h": "c",
+			"USART.C": "cpp"
 		}
 	}
 }

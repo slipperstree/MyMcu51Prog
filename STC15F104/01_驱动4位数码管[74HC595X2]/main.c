@@ -21,9 +21,9 @@ void setBitData(uchar);
 void showDigit(uchar, uchar, uchar);
 
 
-sbit DIO = P3^0;	// 串行数据输入
-sbit RCLK = P3^1;	// 锁存信号——上升沿有效
-sbit SCLK = P3^2;	// 串行数据时钟信号————上升沿有效
+sbit DIO = P0^5;	// 串行数据输入
+sbit RCLK = P0^6;	// 锁存信号——上升沿有效
+sbit SCLK = P0^7;	// 串行数据时钟信号————上升沿有效
 
 sbit btn = P3^4;	// 按钮默认用上拉电阻接到VCC拉低，按钮按下后下拉电阻接到GND拉低
 
