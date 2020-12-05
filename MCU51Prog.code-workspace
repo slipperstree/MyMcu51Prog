@@ -18,6 +18,8 @@
 			"stm8s.h": "c",
 			"oled.h": "c",
 			"USART.C": "cpp"
-		}
+		},
+		"files.encoding": "gb2312",
+		"files.autoGuessEncoding": true
 	}
 }

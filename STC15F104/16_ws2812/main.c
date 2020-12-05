@@ -12,44 +12,60 @@
 
 sbit WS2812 = P3^5;
 
+// 已经验证过的单片机，其他单片机和频率下不保证可以正常运行（1T·/6T/12T和晶振频率一致的话应该是通用的）
+// 不到1T的单片机就不用考虑32M以下的晶振了，太慢了不能满足时序
+// #define MCU_1T_11M_TEST_BY_STC15F10x
+// #define MCU_1T_24M_TEST_BY_STC15F10x
+// #define MCU_1T_33M_TEST_BY_STC15F10x
+#define MCU_6T_32M_TEST_BY_STC89C52x // 烧录的时候需要开启6T模式
+
 #define numLEDs 16		//灯的个数(灯珠越多需要的缓存内存越多每个灯珠需要3个字节，128byte以下小内存单片机最多可驱动29只灯珠)
-#define MAX_BRIGHT  30	//亮度（0-(MAX_BRIGHT-1)）,推荐50以下，不然太亮电流太大带不动，调试的时候5左右就够了
+#define MAX_BRIGHT  12	//亮度（0-(MAX_BRIGHT-1)）,推荐50以下，不然太亮电流太大带不动，调试的时候5左右就够了
                         //另外，渐变色算法要用到这个最大亮度除以3，所以尽量使用能被3整除的数字
 
 // 精确延时用
-#define delay1NOP()	    _nop_();
-#define delay2NOP()	    delay1NOP();_nop_();
-#define delay3NOP()	    delay2NOP();_nop_();
-#define	delay4NOP()	    delay3NOP();_nop_();
-#define	delay5NOP()	    delay4NOP();_nop_();
-#define	delay6NOP()	    delay5NOP();_nop_();
-#define	delay7NOP()	    delay6NOP();_nop_();
-#define	delay8NOP()	    delay7NOP();_nop_();
-#define	delay9NOP()	    delay8NOP();_nop_();
-#define	delay10NOP()	delay9NOP();_nop_();
-#define	delay11NOP()	delay10NOP();_nop_();
-#define	delay12NOP()	delay11NOP();_nop_();
-#define	delay13NOP()	delay12NOP();_nop_();
-#define	delay14NOP()	delay13NOP();_nop_();
-#define	delay15NOP()	delay14NOP();_nop_();
-#define	delay16NOP()	delay15NOP();_nop_();
-#define	delay17NOP()	delay16NOP();_nop_();
-#define	delay18NOP()	delay17NOP();_nop_();
-#define	delay19NOP()	delay18NOP();_nop_();
-#define	delay20NOP()	delay19NOP();_nop_();
+#define delay1NOP()	    _nop_()
+#define delay2NOP()	    ;delay1NOP();_nop_()
+#define delay3NOP()	    ;delay2NOP();_nop_()
+#define	delay4NOP()	    ;delay3NOP();_nop_()
+#define	delay5NOP()	    ;delay4NOP();_nop_()
+#define	delay6NOP()	    ;delay5NOP();_nop_()
+#define	delay7NOP()	    ;delay6NOP();_nop_()
+#define	delay8NOP()	    ;delay7NOP();_nop_()
+#define	delay9NOP()	    ;delay8NOP();_nop_()
+#define	delay10NOP()	;delay9NOP();_nop_()
+#define	delay11NOP()	;delay10NOP();_nop_()
+#define	delay12NOP()	;delay11NOP();_nop_()
+#define	delay13NOP()	;delay12NOP();_nop_()
+#define	delay14NOP()	;delay13NOP();_nop_()
+#define	delay15NOP()	;delay14NOP();_nop_()
+#define	delay16NOP()	;delay15NOP();_nop_()
+#define	delay17NOP()	;delay16NOP();_nop_()
+#define	delay18NOP()	;delay17NOP();_nop_()
+#define	delay19NOP()	;delay18NOP();_nop_()
+#define	delay20NOP()	;delay19NOP();_nop_()
 
-// 以下3个频率@STC15F1104E下测试通过可直接编译47行使用
-#define delaySomeNOP_110592M() ;
-#define delaySomeNOP_24M() delay6NOP();
-#define delaySomeNOP_33M() delay9NOP();
+// 如果使用的单片机不在已经验证列表中且都有问题的话，可以尝试自己添加宏适配自己的MCU的延时
+#ifdef MCU_1T_11M_TEST_BY_STC15F10x
+	#define delaySomeNOP() ;
+#endif
+#ifdef MCU_1T_24M_TEST_BY_STC15F10x
+	#define delaySomeNOP() delay6NOP();
+#endif
+#ifdef MCU_1T_33M_TEST_BY_STC15F10x
+	#define delaySomeNOP() delay1NOP();
+#endif
+#ifdef MCU_6T_32M_TEST_BY_STC89C52x
+	#define delaySomeNOP() ;
+#endif
 
-// 根据晶振频率配置下面这句话
-#define delaySomeNOP() delaySomeNOP_24M()
-
-//复位延时
-//这个延时需要大于50us以满足时序要求，但不可过久
+// 复位延时 同样需要根据自己单片机的情况微调(一般来说上电后等的个数对了，但是是全白色，就增大这里的延时一直到OK为止)
+// 这个延时需要大于50us以满足时序要求，但不可过久
 void Delay50us()
 {
+	#ifdef MCU_1T_11M_TEST_BY_STC15F10x || \
+	       MCU_1T_24M_TEST_BY_STC15F10x || \
+		   MCU_1T_33M_TEST_BY_STC15F10x
 	unsigned char i, j;
 
 	delay2NOP();
@@ -60,6 +76,13 @@ void Delay50us()
 		while (--j)
 			;
 	} while (--i);
+	#endif
+
+	#ifdef MCU_6T_32M_TEST_BY_STC89C52x
+		delay20NOP();delay20NOP();delay20NOP();delay20NOP();delay20NOP();
+		delay20NOP();delay20NOP();delay20NOP();delay20NOP();delay20NOP();
+		delay20NOP();delay20NOP();
+	#endif
 }
 
 // 从这里以下基本上不需要修改 --------------------------------------
@@ -271,29 +294,29 @@ void theaterChase(unsigned long c, unsigned int intervalCnt, unsigned int times,
 // 这个函数是可以用的只是STC15F104只有128byte小内存不够用所以暂时注释掉了，换大内存的MCU就可以使用了
 //Theatre-style crawling lights with rainbow effect
 //带有彩虹效果的戏剧式爬行灯
-// void theaterChaseRainbow(unsigned int intervalCnt, unsigned int times, unsigned int wait)
-// {
-// 	int j, q;
-// 	unsigned int i;
-// 	for (j = 0; j < times; j++)
-// 	{ // cycle all MAX_BRIGHT colors in the wheel 在轮子上循环所有MAX_BRIGHT色
-// 		for (q = 0; q < intervalCnt; q++)
-// 		{
-// 			for (i = 0; i < numLEDs; i = i + intervalCnt)
-// 			{
-// 				SetPixelColor(i + q, Wheel((i + j) % intervalCnt)); //turn every third pixel off 把每一个第三个像素
-// 			}
-// 			PixelUpdate();
+void theaterChaseRainbow(unsigned int intervalCnt, unsigned int times, unsigned int wait)
+{
+	int j, q;
+	unsigned int i;
+	for (j = 0; j < times; j++)
+	{ // cycle all MAX_BRIGHT colors in the wheel 在轮子上循环所有MAX_BRIGHT色
+		for (q = 0; q < intervalCnt; q++)
+		{
+			for (i = 0; i < numLEDs; i = i + intervalCnt)
+			{
+				SetPixelColor(i + q, Wheel((i + j) % intervalCnt)); //turn every third pixel off 把每一个第三个像素
+			}
+			PixelUpdate();
 
-// 			HAL_Delay(wait);
+			HAL_Delay(wait);
 
-// 			for (i = 0; i < numLEDs; i = i + intervalCnt)
-// 			{
-// 				SetPixelColor(i + q, 0); //turn every third pixel off  把每一个第三个像素关掉
-// 			}
-// 		}
-// 	}
-// }
+			for (i = 0; i < numLEDs; i = i + intervalCnt)
+			{
+				SetPixelColor(i + q, 0); //turn every third pixel off  把每一个第三个像素关掉
+			}
+		}
+	}
+}
 
 // Fill the dots one after the other with a color
 //用一种颜色填充这些圆点（按顺序依次点亮）
@@ -329,11 +352,34 @@ void breath(unsigned char gA, unsigned char rA, unsigned char bA,
 	}	
 }
 
+
+void Delay3000ms()		//@32.000MHz
+{
+	unsigned char i, j, k;
+
+	_nop_();
+	i = 61;
+	j = 204;
+	k = 243;
+	do
+	{
+		do
+		{
+			while (--k);
+		} while (--j);
+	} while (--i);
+}
 void main()
 {
 	unsigned char r,g,b;
-	// For Test
-	// PixelUpdate();
+
+	#define C_SPEED 5
+
+	// For Test 调试延时的时候可以先尝试只点亮一个灯
+	PixelUpdate();
+	Send_2811_24bits(0, (MAX_BRIGHT-1), 0);
+	Send_2811_24bits((MAX_BRIGHT-1), 0, 0);
+	Send_2811_24bits(0, 0, (MAX_BRIGHT-1));
 	// Send_2811_24bits(0, (MAX_BRIGHT-1), 0);
 	// Send_2811_24bits((MAX_BRIGHT-1), 0, 0);
 	// Send_2811_24bits(0, 0, (MAX_BRIGHT-1));
@@ -346,45 +392,45 @@ void main()
 	// Send_2811_24bits(0, (MAX_BRIGHT-1), 0);
 	// Send_2811_24bits((MAX_BRIGHT-1), 0, 0);
 	// Send_2811_24bits(0, 0, (MAX_BRIGHT-1));
-	// Send_2811_24bits(0, (MAX_BRIGHT-1), 0);
-	// Send_2811_24bits((MAX_BRIGHT-1), 0, 0);
 	// Send_2811_24bits(0, 0, (MAX_BRIGHT-1));
-	// Send_2811_24bits(0, 0, (MAX_BRIGHT-1));
-	// PixelUpdate();
+
+	PixelUpdate();
+	//Delay3000ms();
 	
 	while (1)
 	{
-		rainbow(500);
-		rainbowCycle(500);
-		theaterChase(Color(10,0,MAX_BRIGHT), 4, 4, 1500);
-		theaterChase(Color(10,0,MAX_BRIGHT), 2, 4, 1500);
-		theaterChase(Color(0,MAX_BRIGHT,10), 2, 4, 1500);
-		theaterChase(Color(0,MAX_BRIGHT,10), 4, 4, 1500);
-		theaterChase(Color(MAX_BRIGHT,10,0), 4, 4, 1500);
-		theaterChase(Color(MAX_BRIGHT,10,0), 2, 4, 1500);
+		rainbow(500/C_SPEED);
+		rainbowCycle(500/C_SPEED);
+		theaterChase(Color(10,0,MAX_BRIGHT), 4, 4, 1500/C_SPEED);
+		theaterChase(Color(10,0,MAX_BRIGHT), 2, 4, 1500/C_SPEED);
+		theaterChase(Color(0,MAX_BRIGHT,10), 2, 4, 1500/C_SPEED);
+		theaterChase(Color(0,MAX_BRIGHT,10), 4, 4, 1500/C_SPEED);
+		theaterChase(Color(MAX_BRIGHT,10,0), 4, 4, 1500/C_SPEED);
+		theaterChase(Color(MAX_BRIGHT,10,0), 2, 4, 1500/C_SPEED);
 
-		// theaterChaseRainbow(4, 10, 1000);theaterChaseRainbow(4, 9, 900);theaterChaseRainbow(4, 8, 800);
-		// theaterChaseRainbow(4, 7, 700);theaterChaseRainbow(4, 6, 600);theaterChaseRainbow(4, 5, 500);
-		// theaterChaseRainbow(4, 4, 400);theaterChaseRainbow(4, 3, 300);theaterChaseRainbow(4, 2, 200);
-		// theaterChaseRainbow(4, 20, 100);theaterChaseRainbow(4, 20, 100);
-		// theaterChaseRainbow(4, 2, 200);theaterChaseRainbow(4, 3, 300);theaterChaseRainbow(4, 4, 400);
-		// theaterChaseRainbow(4, 5, 500);theaterChaseRainbow(4, 6, 600);theaterChaseRainbow(4, 7, 700);
-		// theaterChaseRainbow(4, 8, 800);theaterChaseRainbow(4, 9, 900);theaterChaseRainbow(4, 10, 1000);
+		// 函数被注释掉了，需要同时放开
+		theaterChaseRainbow(4, 10, 1000/C_SPEED);theaterChaseRainbow(4, 9, 900/C_SPEED);theaterChaseRainbow(4, 8, 800/C_SPEED);
+		theaterChaseRainbow(4, 7, 700/C_SPEED);theaterChaseRainbow(4, 6, 600/C_SPEED);theaterChaseRainbow(4, 5, 500/C_SPEED);
+		theaterChaseRainbow(4, 4, 400/C_SPEED);theaterChaseRainbow(4, 3, 300/C_SPEED);theaterChaseRainbow(4, 2, 200/C_SPEED);
+		theaterChaseRainbow(4, 20, 100/C_SPEED);theaterChaseRainbow(4, 20, 100/C_SPEED);
+		theaterChaseRainbow(4, 2, 200/C_SPEED);theaterChaseRainbow(4, 3, 300/C_SPEED);theaterChaseRainbow(4, 4, 400/C_SPEED);
+		theaterChaseRainbow(4, 5, 500/C_SPEED);theaterChaseRainbow(4, 6, 600/C_SPEED);theaterChaseRainbow(4, 7, 700/C_SPEED);
+		theaterChaseRainbow(4, 8, 800/C_SPEED);theaterChaseRainbow(4, 9, 900/C_SPEED);theaterChaseRainbow(4, 10, 1000/C_SPEED);
 		
-		colorWipe(Color(MAX_BRIGHT,10,0),1000);
-		colorWipe(Color(10,0,MAX_BRIGHT),1000);
-		colorWipe(Color(0,10,MAX_BRIGHT),1000);
-		colorWipe(Color(0,MAX_BRIGHT,0),1000);
+		colorWipe(Color(MAX_BRIGHT,10,0),1000/C_SPEED);
+		colorWipe(Color(10,0,MAX_BRIGHT),1000/C_SPEED);
+		colorWipe(Color(0,10,MAX_BRIGHT),1000/C_SPEED);
+		colorWipe(Color(0,MAX_BRIGHT,0),1000/C_SPEED);
 		
 		
 		// 渐变色测试
-		breath(MAX_BRIGHT,0,0,           0, MAX_BRIGHT, 0, 1000);
-		breath(0, MAX_BRIGHT, 0,           0,0,MAX_BRIGHT, 1000);
-		breath(0,0,MAX_BRIGHT,           MAX_BRIGHT,0,0, 1000);
-		breath(MAX_BRIGHT,0,0,           0, MAX_BRIGHT, MAX_BRIGHT, 1000);
-		breath(0,          MAX_BRIGHT, MAX_BRIGHT,  MAX_BRIGHT, MAX_BRIGHT, 0, 1000);
-		breath(MAX_BRIGHT, MAX_BRIGHT, 0,           MAX_BRIGHT, 0, MAX_BRIGHT, 1000);
-		breath(MAX_BRIGHT, 0, MAX_BRIGHT,           0,0,0, 1000);
-		breath(0,0,0,           MAX_BRIGHT,0,0, 1000);
+		breath(MAX_BRIGHT,0,0,           0, MAX_BRIGHT, 0, 1000/C_SPEED);
+		breath(0, MAX_BRIGHT, 0,           0,0,MAX_BRIGHT, 1000/C_SPEED);
+		breath(0,0,MAX_BRIGHT,           MAX_BRIGHT,0,0, 1000/C_SPEED);
+		breath(MAX_BRIGHT,0,0,           0, MAX_BRIGHT, MAX_BRIGHT, 1000/C_SPEED);
+		breath(0,          MAX_BRIGHT, MAX_BRIGHT,  MAX_BRIGHT, MAX_BRIGHT, 0, 1000/C_SPEED);
+		breath(MAX_BRIGHT, MAX_BRIGHT, 0,           MAX_BRIGHT, 0, MAX_BRIGHT, 1000/C_SPEED);
+		breath(MAX_BRIGHT, 0, MAX_BRIGHT,           0,0,0, 1000/C_SPEED);
+		breath(0,0,0,           MAX_BRIGHT,0,0, 1000/C_SPEED);
 	}
 }
