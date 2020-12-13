@@ -1,9 +1,10 @@
 /********************************************************/
-/*�� �ߣ�â��
-/*�޸����ڣ�2020.11.23
-/*��    ����V1.0
-/*�����ܣ���51��Ƭ������ws2812 RGB�������ʾȫɫ��
-/*��        ע��51��Ƭ������11.0592M/24M/33M@STC15L104E����ͨ���������ͺ���Ҫ����ʵ����Ҫ������ʱ����
+/*作 者：芒果
+/*创建日期：2020.11.23
+/*修改日期：2020.12.13
+/*版    本：V1.0
+/*程序功能：用51单片机控制ws2812 RGB输出，显示全色彩
+/*备        注：51单片机晶振11.0592M/24M/33M@STC15L104E测试通过，其他型号需要根据实际需要调整延时部分
 /********************************************************/
 
 //#include<reg52.h>
@@ -12,18 +13,18 @@
 
 sbit WS2812 = P3^5;
 
-// �Ѿ���֤���ĵ�Ƭ����������Ƭ����Ƶ���²���֤�����������У�1T��/6T/12T�;���Ƶ��һ�µĻ�Ӧ����ͨ�õģ�
-// ����1T�ĵ�Ƭ���Ͳ��ÿ���32M���µľ����ˣ�̫���˲�������ʱ��
+// 已经验证过的单片机，其他单片机和频率下不保证可以正常运行（1T·/6T/12T和晶振频率一致的话应该是通用的）
+// 不到1T的单片机就不用考虑32M以下的晶振了，太慢了不能满足时序
 // #define MCU_1T_11M_TEST_BY_STC15F10x
 // #define MCU_1T_24M_TEST_BY_STC15F10x
 // #define MCU_1T_33M_TEST_BY_STC15F10x
-#define MCU_6T_32M_TEST_BY_STC89C52x // ��¼��ʱ����Ҫ����6Tģʽ
+#define MCU_6T_32M_TEST_BY_STC89C52x // 烧录的时候需要开启6T模式
 
-#define numLEDs 16		//�Ƶĸ���(����Խ����Ҫ�Ļ����ڴ�Խ��ÿ��������Ҫ3���ֽڣ�128byte����С�ڴ浥Ƭ����������29ֻ����)
-#define MAX_BRIGHT  12	//���ȣ�0-(MAX_BRIGHT-1)��,�Ƽ�50���£���Ȼ̫������̫������������Ե�ʱ��5���Ҿ͹���
-                        //���⣬����ɫ�㷨Ҫ�õ����������ȳ���3�����Ծ���ʹ���ܱ�3����������
+#define numLEDs 16		//灯的个数(灯珠越多需要的缓存内存越多每个灯珠需要3个字节，128byte以下小内存单片机最多可驱动29只灯珠)
+#define MAX_BRIGHT  12	//亮度（0-(MAX_BRIGHT-1)）,推荐50以下，不然太亮电流太大带不动，调试的时候5左右就够了
+                        //另外，渐变色算法要用到这个最大亮度除以3，所以尽量使用能被3整除的数字
 
-// ��ȷ��ʱ��
+// 精确延时用
 #define delay1NOP()	    _nop_()
 #define delay2NOP()	    ;delay1NOP();_nop_()
 #define delay3NOP()	    ;delay2NOP();_nop_()
@@ -45,7 +46,7 @@ sbit WS2812 = P3^5;
 #define	delay19NOP()	;delay18NOP();_nop_()
 #define	delay20NOP()	;delay19NOP();_nop_()
 
-// ���ʹ�õĵ�Ƭ�������Ѿ���֤�б����Ҷ�������Ļ������Գ����Լ����Ӻ������Լ���MCU����ʱ
+// 如果使用的单片机不在已经验证列表中且都有问题的话，可以尝试自己添加宏适配自己的MCU的延时
 #ifdef MCU_1T_11M_TEST_BY_STC15F10x
 	#define delaySomeNOP() ;
 #endif
@@ -59,8 +60,8 @@ sbit WS2812 = P3^5;
 	#define delaySomeNOP() ;
 #endif
 
-// ��λ��ʱ ͬ����Ҫ�����Լ���Ƭ�������΢��(һ����˵�ϵ��ȵĸ������ˣ�������ȫ��ɫ���������������ʱһֱ��OKΪֹ)
-// �����ʱ��Ҫ����50us������ʱ��Ҫ�󣬵����ɹ���
+// 复位延时 同样需要根据自己单片机的情况微调(一般来说上电后等的个数对了，但是是全白色，就增大这里的延时一直到OK为止)
+// 这个延时需要大于50us以满足时序要求，但不可过久
 void Delay50us()
 {
 	#ifdef MCU_1T_11M_TEST_BY_STC15F10x || \
@@ -85,12 +86,12 @@ void Delay50us()
 	#endif
 }
 
-// ���������»����ϲ���Ҫ�޸� --------------------------------------
-unsigned char buf_R[numLEDs] = {0}; //��ɫ����
+// 从这里以下基本上不需要修改 --------------------------------------
+unsigned char buf_R[numLEDs] = {0}; //颜色缓存
 unsigned char buf_G[numLEDs] = {0};
 unsigned char buf_B[numLEDs] = {0};
 
-// ������ʱ�����ڿ��ƶ����ٶ��ã����úܾ�ȷ
+// 粗略延时，用于控制动画速度用，不用很精确
 void HAL_Delay(unsigned int t)
 {
 	unsigned int x, y;
@@ -99,50 +100,50 @@ void HAL_Delay(unsigned int t)
 			;
 }
 
-//����24λ����
-//1�룬�ߵ�ƽ850ns �͵�ƽ400ns �������150ns
-//0�룬�ߵ�ƽ400ns �͵�ƽ850ns �������150ns
+//发送24位数据
+//1码，高电平850ns 低电平400ns 误差正负150ns
+//0码，高电平400ns 低电平850ns 误差正负150ns
 void Send_2811_24bits(unsigned char G8, unsigned char R8, unsigned char B8)
 {
 	unsigned char n = 0;
 
-	// ������CY�Ĵ���(���ƺ����λΪ1��CY�Զ���Ӳ����1)�������1��0֮����߱���1���߱��0��
-	// �Ӷ�������1����0
+	// 这里用CY寄存器(左移后最高位为1则CY自动被硬件置1)巧妙的在1和0之间或者保持1或者变成0，
+	// 从而发送码1或码0
 
-	//����G8λ
+	//发送G8位
 	n=8;
 	G8 <<= 1;
 	while(n){
 		WS2812 = 1;
-		// �����Ƶ�ϸ߿��ڴ˴��ʵ�����_nop_():
+		// 如果主频较高可在此处适当增加_nop_():
 		delaySomeNOP();
-		// �������dat <<= 1;�����˴�Ҳ����
+		// 将下面的dat <<= 1;移至此处也可以
 		WS2812 = CY;
 		WS2812 = 0;
 		G8 <<= 1;
 		n--;
 	}
-	//����R8λ
+	//发送R8位
 	n=8;
 	R8 <<= 1;
 	while(n){
 		WS2812 = 1;
-		// �����Ƶ�ϸ߿��ڴ˴��ʵ�����_nop_():
+		// 如果主频较高可在此处适当增加_nop_():
 		delaySomeNOP();
-		// �������dat <<= 1;�����˴�Ҳ����
+		// 将下面的dat <<= 1;移至此处也可以
 		WS2812 = CY;
 		WS2812 = 0;
 		R8 <<= 1;
 		n--;
 	}
-	//����B8λ
+	//发送B8位
 	n=8;
 	B8 <<= 1;
 	while(n){
 		WS2812 = 1;
-		// �����Ƶ�ϸ߿��ڴ˴��ʵ�����_nop_():
+		// 如果主频较高可在此处适当增加_nop_():
 		delaySomeNOP();
-		// �������dat <<= 1;�����˴�Ҳ����
+		// 将下面的dat <<= 1;移至此处也可以
 		WS2812 = CY;
 		WS2812 = 0;
 		B8 <<= 1;
@@ -152,44 +153,44 @@ void Send_2811_24bits(unsigned char G8, unsigned char R8, unsigned char B8)
 	
 }
 
-//��λ��
+//复位码
 void RGB_Rst()
 {
 	WS2812 = 0;
 	Delay50us();
 }
-//��24λ����GRB��תRGB
+//把24位数据GRB码转RGB
 void Set_Colour(unsigned char r, unsigned char g, unsigned char b)
 {
 	unsigned char i;
 	for (i = 0; i < numLEDs; i++)
 	{
-		buf_R[i] = r; //����
+		buf_R[i] = r; //缓冲
 		buf_G[i] = g;
 		buf_B[i] = b;
 	}
 	for (i = 0; i < numLEDs; i++)
 	{
-		Send_2811_24bits(buf_G[i], buf_R[i], buf_B[i]); //������ʾ
+		Send_2811_24bits(buf_G[i], buf_R[i], buf_B[i]); //发送显示
 	}
 }
-//ĳһ������ʾ����ɫ
+//某一个点显示的颜色
 void SetPointColour(unsigned int num, unsigned char r, unsigned char g, unsigned char b)
 {
 	unsigned char i;
 	for (i = 0; i < numLEDs; i++)
 	{
-		buf_R[num] = r; //����
+		buf_R[num] = r; //缓冲
 		buf_G[num] = g;
 		buf_B[num] = b;
 	}
 	for (i = 0; i < numLEDs; i++)
 	{
-		Send_2811_24bits(buf_G[i], buf_R[i], buf_B[i]); //������ʾ
+		Send_2811_24bits(buf_G[i], buf_R[i], buf_B[i]); //发送显示
 	}
 }
 
-//��ɫ����24λ����ַ�
+//颜色交换24位不拆分发
 void SetPixelColor(unsigned char num, unsigned long c)
 {
 	unsigned char i;
@@ -205,18 +206,18 @@ void SetPixelColor(unsigned char num, unsigned long c)
 	}
 }
 
-//��λ
+//复位
 void PixelUpdate()
 {
 	RGB_Rst();
 }
-//��ɫ
+//颜色
 unsigned long Color(unsigned char r, unsigned char g, unsigned char b)
 {
 	return ((unsigned long)r << 16) | ((unsigned long)g << 8) | b;
 }
 
-//��ɫ�㷨
+//颜色算法
 unsigned long Wheel(unsigned char WheelPos)
 {
 	WheelPos = (MAX_BRIGHT-1) - WheelPos;
@@ -233,7 +234,7 @@ unsigned long Wheel(unsigned char WheelPos)
 	return Color(WheelPos * 3, (MAX_BRIGHT-1) - WheelPos * 3, 0);
 }
 
-//�ʺ�
+//彩虹
 void rainbow(unsigned int wait)
 {
 	unsigned int i, j;
@@ -249,13 +250,13 @@ void rainbow(unsigned int wait)
 	}
 }
 
-//��΢��ͬ���ǣ���ʹ�òʺ���ȷֲ�
+//稍微不同的是，这使得彩虹均匀分布
 void rainbowCycle(unsigned int wait)
 {
 	unsigned int i, j;
 	PixelUpdate();
 	for (j = 0; j < MAX_BRIGHT * 5; j++)
-	{ // 5 cycles of all colors on wheel  ������������ɫ��5��ѭ��
+	{ // 5 cycles of all colors on wheel  车轮上所有颜色的5个循环
 		for (i = 0; i < numLEDs; i++)
 		{
 			SetPixelColor(i, Wheel(((i * MAX_BRIGHT / numLEDs) + j) & (MAX_BRIGHT-1)));
@@ -265,7 +266,7 @@ void rainbowCycle(unsigned int wait)
 	}
 }
 
-//Theatre-style crawling lights. ÿ������(intervalCnt����ǵ��������Լ��)��һ����ƽ�ƣ�תȦ��
+//Theatre-style crawling lights. 每隔几个(intervalCnt最好是灯珠个数的约数)亮一个并平移（转圈）
 void theaterChase(unsigned long c, unsigned int intervalCnt, unsigned int times, int wait)
 {
 	int j, q;
@@ -291,20 +292,20 @@ void theaterChase(unsigned long c, unsigned int intervalCnt, unsigned int times,
 	}
 }
 
-// ��������ǿ����õ�ֻ��STC15F104ֻ��128byteС�ڴ治����������ʱע�͵��ˣ������ڴ��MCU�Ϳ���ʹ����
+// 这个函数是可以用的只是STC15F104只有128byte小内存不够用所以暂时注释掉了，换大内存的MCU就可以使用了
 //Theatre-style crawling lights with rainbow effect
-//���вʺ�Ч����Ϸ��ʽ���е�
+//带有彩虹效果的戏剧式爬行灯
 void theaterChaseRainbow(unsigned int intervalCnt, unsigned int times, unsigned int wait)
 {
 	int j, q;
 	unsigned int i;
 	for (j = 0; j < times; j++)
-	{ // cycle all MAX_BRIGHT colors in the wheel ��������ѭ������MAX_BRIGHTɫ
+	{ // cycle all MAX_BRIGHT colors in the wheel 在轮子上循环所有MAX_BRIGHT色
 		for (q = 0; q < intervalCnt; q++)
 		{
 			for (i = 0; i < numLEDs; i = i + intervalCnt)
 			{
-				SetPixelColor(i + q, Wheel((i + j) % intervalCnt)); //turn every third pixel off ��ÿһ������������
+				SetPixelColor(i + q, Wheel((i + j) % intervalCnt)); //turn every third pixel off 把每一个第三个像素
 			}
 			PixelUpdate();
 
@@ -312,14 +313,14 @@ void theaterChaseRainbow(unsigned int intervalCnt, unsigned int times, unsigned 
 
 			for (i = 0; i < numLEDs; i = i + intervalCnt)
 			{
-				SetPixelColor(i + q, 0); //turn every third pixel off  ��ÿһ�����������عص�
+				SetPixelColor(i + q, 0); //turn every third pixel off  把每一个第三个像素关掉
 			}
 		}
 	}
 }
 
 // Fill the dots one after the other with a color
-//��һ����ɫ�����ЩԲ�㣨��˳�����ε�����
+//用一种颜色填充这些圆点（按顺序依次点亮）
 void colorWipe(unsigned long c, unsigned int wait)
 {
 	unsigned int i = 0;
@@ -334,7 +335,7 @@ void colorWipe(unsigned long c, unsigned int wait)
 unsigned char absSub(unsigned char a, unsigned char b){
 	return a>b?a-b:b-a;
 }
-// ������
+// 呼吸灯
 void breath(unsigned char gA, unsigned char rA, unsigned char bA,
  						unsigned char gB, unsigned char rB, unsigned char bB,
 						unsigned int wait) {
@@ -375,7 +376,7 @@ void main()
 
 	#define C_SPEED 5
 
-	// For Test ������ʱ��ʱ������ȳ���ֻ����һ����
+	// For Test 调试延时的时候可以先尝试只点亮一个灯
 	PixelUpdate();
 	Send_2811_24bits(0, (MAX_BRIGHT-1), 0);
 	Send_2811_24bits((MAX_BRIGHT-1), 0, 0);
@@ -408,7 +409,7 @@ void main()
 		theaterChase(Color(MAX_BRIGHT,10,0), 4, 4, 1500/C_SPEED);
 		theaterChase(Color(MAX_BRIGHT,10,0), 2, 4, 1500/C_SPEED);
 
-		// ������ע�͵��ˣ���Ҫͬʱ�ſ�
+		// 函数被注释掉了，需要同时放开
 		theaterChaseRainbow(4, 10, 1000/C_SPEED);theaterChaseRainbow(4, 9, 900/C_SPEED);theaterChaseRainbow(4, 8, 800/C_SPEED);
 		theaterChaseRainbow(4, 7, 700/C_SPEED);theaterChaseRainbow(4, 6, 600/C_SPEED);theaterChaseRainbow(4, 5, 500/C_SPEED);
 		theaterChaseRainbow(4, 4, 400/C_SPEED);theaterChaseRainbow(4, 3, 300/C_SPEED);theaterChaseRainbow(4, 2, 200/C_SPEED);
@@ -423,7 +424,7 @@ void main()
 		colorWipe(Color(0,MAX_BRIGHT,0),1000/C_SPEED);
 		
 		
-		// ����ɫ����
+		// 渐变色测试
 		breath(MAX_BRIGHT,0,0,           0, MAX_BRIGHT, 0, 1000/C_SPEED);
 		breath(0, MAX_BRIGHT, 0,           0,0,MAX_BRIGHT, 1000/C_SPEED);
 		breath(0,0,MAX_BRIGHT,           MAX_BRIGHT,0,0, 1000/C_SPEED);
