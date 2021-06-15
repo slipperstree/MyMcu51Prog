@@ -5,13 +5,19 @@
 #include "../header/sensorAdc.h"
 #include "../header/common.h"
 
-//默认显示模式
-//enum EnumDispMode dispMode = DISP_MODE_HHMM;
-enum EnumDispMode dispMode = DISP_MODE_HHMM_MMDD;
-enum EnumDispMode dispModeBefore = DISP_MODE_HHMM;
-
 //如果启用额外的4位数码管则放开这一句
 //#define USE_EX_DISP
+
+//前4位数码管显示模式
+#ifdef USE_EX_DISP
+	// 启用额外的4位数码管的时候，前4位常时显示时间
+	enum EnumDispMode dispMode = DISP_MODE_HHMM;
+#else
+	// 否则时间日期自动切换
+	enum EnumDispMode dispMode = DISP_MODE_HHMM_MMDD;
+#endif
+
+enum EnumDispMode dispModeBefore = DISP_MODE_HHMM;
 
 // 数码管引脚连接 位
 sbit DIG1 = P3^2;
