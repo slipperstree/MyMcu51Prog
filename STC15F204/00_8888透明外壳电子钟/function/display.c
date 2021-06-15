@@ -10,11 +10,21 @@
 enum EnumDispMode dispMode = DISP_MODE_HHMM_MMDD;
 enum EnumDispMode dispModeBefore = DISP_MODE_HHMM;
 
+//如果启用额外的4位数码管则放开这一句
+//#define USE_EX_DISP
+
 // 数码管引脚连接 位
 sbit DIG1 = P3^2;
 sbit DIG2 = P3^3;
 sbit DIG3 = P3^4;
 sbit DIG4 = P3^5;
+
+#ifdef USE_EX_DISP
+sbit DIG5 = P1^3;
+sbit DIG6 = P1^4;
+sbit DIG7 = P1^5;
+sbit DIG8 = P1^6;
+#endif
 
 // 数码管引脚连接 段
 sbit segA = P2^0;
@@ -34,7 +44,11 @@ sbit segDP = P2^7;
 static_idata_uchar nowPos = 1;
 
 //数码管各位上的显示内容
+#ifdef USE_EX_DISP
+	static_idata_uchar dispDat[8];
+#else
 static_idata_uchar dispDat[4];
+#endif
 
 //用于滚动显示用的字符串缓冲区
 static_idata_uchar dispString[32];
@@ -221,6 +235,10 @@ void showPosition(uchar pos, uchar dispDat, uchar pwmOnOff){
 	// 防止残影，先清屏，关闭所有显示
 	DIG4 = DIG2 = DIG3 = DIG1 = 1;
 
+	#ifdef USE_EX_DISP
+	DIG8 = DIG7 = DIG6 = DIG5 = 1;
+	#endif
+
 	P2 = dispDat;
 
 	switch (pos)
@@ -237,6 +255,20 @@ void showPosition(uchar pos, uchar dispDat, uchar pwmOnOff){
 		case 3:
 			DIG4 = pwmOnOff;
 			break;
+		#ifdef USE_EX_DISP
+		case 4:
+			DIG5 = pwmOnOff;
+			break;
+		case 5:
+			DIG6 = pwmOnOff;
+			break;
+		case 6:
+			DIG7 = pwmOnOff;
+			break;
+		case 7:
+			DIG8 = pwmOnOff;
+			break;
+		#endif
 		default:
 			break;
 	}
@@ -488,6 +520,15 @@ void DISPLAY_updateDisplay() {
 		default:
 			break;
 	}
+	
+	// 额外的4位数码管 
+	#ifdef USE_EX_DISP
+		// 固定显示日期 MM.DD
+		dispDat[4] = digit124[getShiWei(DS1302_GetMonth())];
+		dispDat[5] = digit124[getGeWei(DS1302_GetMonth())] 		& 0x7f;
+		dispDat[6] =   digit3[getShiWei(DS1302_GetDay())];
+		dispDat[7] = digit124[getGeWei(DS1302_GetDay())];
+	#endif
 }
 
 // 刷新显示，需要在main循环中调用
@@ -506,10 +547,18 @@ void DISPLAY_refreshDisplay() {
 	if (ttPWM >= PWM_WIDTH_ALL){
 		ttPWM = 0;
 		nowPos++;
+
+		#ifdef USE_EX_DISP
+			if (nowPos>=8)
+			{
+				nowPos=0;
+			}
+		#else
 		if (nowPos>=4)
 		{
 			nowPos=0;
 		}
+		#endif
 	}
 }
 
