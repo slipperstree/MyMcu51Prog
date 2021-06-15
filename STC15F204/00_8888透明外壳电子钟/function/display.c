@@ -26,7 +26,6 @@ sbit DIG3 = P3^4;
 sbit DIG4 = P3^5;
 
 #ifdef USE_EX_DISP
-//sbit DIG5 = P1^3;//”√”⁄8266—”≥Ÿ¡À£ø
 sbit DIG5 = P1^4;
 sbit DIG6 = P1^5;
 sbit DIG7 = P5^4;
