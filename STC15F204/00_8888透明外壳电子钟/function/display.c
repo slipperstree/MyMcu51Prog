@@ -20,10 +20,11 @@ sbit DIG3 = P3^4;
 sbit DIG4 = P3^5;
 
 #ifdef USE_EX_DISP
-sbit DIG5 = P1^3;
-sbit DIG6 = P1^4;
-sbit DIG7 = P1^5;
-sbit DIG8 = P1^6;
+//sbit DIG5 = P1^3;//用于8266延迟了？
+sbit DIG5 = P1^4;
+sbit DIG6 = P1^5;
+sbit DIG7 = P5^4;
+sbit DIG8 = P5^5;
 #endif
 
 // 数码管引脚连接 段
