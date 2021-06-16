@@ -27,7 +27,7 @@ sbit DIG4 = P3^5;
 
 #ifdef USE_EX_DISP
 sbit DIG5 = P1^4;
-sbit DIG6 = P1^5;
+sbit DIG6 = P1^5;// TODO: 跟BEEP重复了
 sbit DIG7 = P5^4;
 sbit DIG8 = P5^5;
 #endif
@@ -41,6 +41,8 @@ sbit segE = P2^4;
 sbit segF = P2^5;
 sbit segG = P2^6;
 sbit segDP = P2^7;
+
+sbit BEEP = P1^5;// TODO: 跟EX数码管重复了
 
 // 位 点亮/关闭 电平定义
 #define DIG_ON   0
@@ -511,7 +513,7 @@ void DISPLAY_updateDisplay() {
 			if (DS1302_GetCdMinute() == 0 && DS1302_GetCdSecond() == 0)
 			{
 				// 倒计时结束，BEEP
-				P15 = flagIsFlash;
+				BEEP = flagIsFlash;
 			}
 			break;
 		
@@ -601,7 +603,7 @@ void DISPLAY_ShowModeForAWhile(enum EnumDispMode mode, int interval) {
 
 void DISPLAY_ShowHHMM(){
 	//强制关闭蜂鸣器
-	P15 = 1;
+	BEEP = 1;
 	dispMode = DISP_MODE_HHMM;
 }
 
@@ -611,7 +613,7 @@ void DISPLAY_ShowMMDD(){
 
 void DISPLAY_ShowHHMM_MMDD(){
 	//强制关闭蜂鸣器
-	P15 = 1;
+	BEEP = 1;
 	dispMode = DISP_MODE_HHMM_MMDD;
 }
 
