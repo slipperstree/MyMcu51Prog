@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.lua": "lua",
+			"common.h": "c"
+		},
+		"files.autoGuessEncoding": true
+	}
+}

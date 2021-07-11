@@ -1,0 +1,52 @@
+{
+    "configurations": [
+        {
+            "name": "STC8x",
+            "includePath": [
+                "${workspaceFolder}/../../libraries",
+                "${workspaceFolder}/../../libraries/core",
+                "${workspaceFolder}/../../libraries/core/register/STC8x",
+                "${workspaceFolder}/../../libraries/drives",
+                "${workspaceFolder}/../../libraries/drives/KeyScan",
+                "${workspaceFolder}/../../libraries/peripherals",
+                "${workspaceFolder}/../../libraries/peripherals/STC8x/inc",
+                "${workspaceFolder}/../../libraries/peripherals/STC8x/src",
+                "${workspaceFolder}/../../libraries/components",
+                "${workspaceFolder}/../../libraries/components/TMT",
+                "${workspaceFolder}/../../libraries/components/PrintfRed",
+                "${workspaceFolder}/../../libraries/components/PreDelay",
+                "${workspaceFolder}/../../project/STC8Ax/main",
+                "${workspaceFolder}/../../project/STC8Ax/application",
+                "${workspaceFolder}/../../libraries/core/startup/STC8x",
+                "E:/Keil5/C51/INC",
+                "${workspaceFolder}/../../project/STC8Ax"
+            ],
+            "defines": [
+                "__C51__",
+                "__VSCODE_C51__",
+                "reentrant=",
+                "compact=",
+                "small=",
+                "large=",
+                "data=",
+                "idata=",
+                "pdata=",
+                "bdata=",
+                "xdata=",
+                "code=",
+                "bit=char",
+                "sbit=char",
+                "sfr=char",
+                "sfr16=int",
+                "sfr32=int",
+                "interrupt=",
+                "using=",
+                "_at_=",
+                "_priority_=",
+                "_task_="
+            ],
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
