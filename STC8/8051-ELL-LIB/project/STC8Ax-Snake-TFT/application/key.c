@@ -1,6 +1,6 @@
 // ******* 根据需要修改头文件定义，key.h 和 common.h 是必须的 ***********************************
-#include "../header/key.h"
-#include "../header/common.h"
+#include "key.h"
+#include "common.h"
 
 // ******* 根据硬件电气连接修改下列定义 ***********************************
 

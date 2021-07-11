@@ -9,6 +9,7 @@
 #define static_idata_uint static idata unsigned int
 #define static_idata_int static idata int
 
+void My_delay_ms(unsigned int n);
 unsigned char My_strlen(char* x);
 
 #endif

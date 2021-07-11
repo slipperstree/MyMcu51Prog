@@ -27,7 +27,9 @@
             "stc8x_timer.h": "c",
             "type_traits": "c",
             "stc8x_uart.h": "c",
-            "common_.h": "c"
+            "common_.h": "c",
+            "common.h": "c",
+            "key.h": "c"
         },
         "C_Cpp.default.intelliSenseMode": "gcc-arm",
         "files.autoGuessEncoding": true,

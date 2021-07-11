@@ -16,10 +16,9 @@
                 "${workspaceFolder}/../../libraries/components/PrintfRed",
                 "${workspaceFolder}/../../libraries/components/PreDelay",
                 "${workspaceFolder}/../../project/STC8Ax/main",
-                "${workspaceFolder}/../../project/STC8Ax/application",
                 "${workspaceFolder}/../../libraries/core/startup/STC8x",
                 "E:/Keil5/C51/INC",
-                "${workspaceFolder}/../../project/STC8Ax"
+                "${workspaceFolder}/application/inc"
             ],
             "defines": [
                 "__C51__",
