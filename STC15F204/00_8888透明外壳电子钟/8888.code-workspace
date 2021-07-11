@@ -4,11 +4,15 @@
 			"path": "."
 		},
 		{
-			"path": "../../../../../../Downloads/程序（1.5秒 时间，日期交替）"
+			"path": "../../../../../陈凌同步文件夹"
 		}
 	],
 	"settings": {
 		"files.encoding": "gb2312",
-		"files.autoGuessEncoding": true
+		"files.autoGuessEncoding": true,
+		"files.associations": {
+			"*.lua": "lua",
+			"common.h": "c"
+		}
 	}
 }

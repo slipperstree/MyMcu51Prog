@@ -10,8 +10,14 @@
 #define ADC_SPEEDH  0x40            //180个时钟
 #define ADC_SPEEDHH 0x60            //90个时钟
 
+// 启用温度传感器
+//#define USE_TEMP_ADC
+
 #define ADC_CH_BRIGHT  6
-#define ADC_CH_TEMP    7
+
+#ifdef USE_TEMP_ADC
+	#define ADC_CH_TEMP    7
+#endif
 static_idata_uchar ch = ADC_CH_BRIGHT;          //ADC通道号
 
 static_idata_uchar tempValue = 0;
@@ -26,7 +32,11 @@ static_idata_uchar brightAdcValueAvg = 0;
 ----------------------------*/
 void ADC_init()
 {
-    P1ASF = 0xc0;                   //设置 P1.6, P1.7 为AD口 [1100 0000]
+	#ifdef USE_TEMP_ADC
+    	P1ASF = 0xc0;                   //设置 P1.6, P1.7 为AD口 [1100 0000]
+	#else
+		P1ASF = 0x40;                   //设置 P1.6 为AD口 [0100 0000]
+	#endif
     ADC_RES = 0;                    //清除结果寄存器
     ADC_CONTR = ADC_POWER | ADC_SPEEDLL | ADC_START | ch;
     delay_ms(2);                    //ADC上电并延时
@@ -65,7 +75,9 @@ void adc_isr() interrupt 5 using 1
 			brightAdcValue = brightAdcValueAvg;
 
 			//切换到另一个通道
-			ch = ADC_CH_TEMP;
+			#ifdef USE_TEMP_ADC
+				ch = ADC_CH_TEMP;
+			#endif
 		}
 		
 	} else {

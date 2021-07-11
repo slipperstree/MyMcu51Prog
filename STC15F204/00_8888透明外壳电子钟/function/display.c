@@ -27,9 +27,9 @@ sbit DIG4 = P3^5;
 
 #ifdef USE_EX_DISP
 sbit DIG5 = P1^4;
-sbit DIG6 = P1^5;// TODO: 跟BEEP重复了
+sbit DIG6 = P1^7;
 sbit DIG7 = P5^4;
-sbit DIG8 = P5^5;
+sbit DIG8 = P0^1; // sbit DIG8 = P5^5; STC15有两个版本,早期版本中没有P55,脚位上连的其实是P01
 #endif
 
 // 数码管引脚连接 段
