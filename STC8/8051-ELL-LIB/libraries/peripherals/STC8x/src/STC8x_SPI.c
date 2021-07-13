@@ -54,12 +54,26 @@
 		FSCSTATE SPI_Init(const SPIInit_Type* spix)
 		{
 			SPDAT = 0;
-			SPSTAT = SPIF | WCOL;          
-			SPCTL = (SPCTL & 0x6B) | (spix -> Type);
-			SPCTL = (SPCTL & 0xFC) | (spix -> ClkSrc);
-			SPCTL = (SPCTL & 0xF3) | (spix -> Mode << 2);
-			SPCTL = (SPCTL & 0xDF) | (spix -> Tran << 5);
-			SPCTL = (SPCTL & 0xBF) | (spix -> Run << 6);  
+			SPSTAT = SPIF | WCOL;
+
+			// B7=SSIG:SS 引脚功能控制位
+			//    0:SS 引脚确定器件是主机还是从机
+			//    1:忽略 SS 引脚功能，使用 MSTR 确定器件是主机还是从机
+			// B4=MSTR:器件主/从模式选择位
+			// 	  设置主机模式:
+			//       若 SSIG=0，则 SS 管脚必须为高电平且设置 MSTR 为 1
+			//       若 SSIG=1，则只需要设置 MSTR 为 1(忽略 SS 管脚的电平) 
+			//	  设置从机模式:
+			//       若 SSIG=0，则 SS 管脚必须为低电平(与 MSTR 位无关)
+			//       若 SSIG=1，则只需要设置 MSTR 为 0(忽略 SS 管脚的电平)
+			// CPHA:SPI 时钟相位控制
+			//    0:数据 SS 管脚为低电平驱动第一位数据并在 SCLK 的后时钟沿改变数据，前时钟沿采样数据(必 须 SSIG=0)
+			//    1:数据在 SCLK 的前时钟沿驱动，后时钟沿采样
+			SPCTL = (SPCTL & 0x6F) | (spix -> Type);  		//0x6F=01101111
+			SPCTL = (SPCTL & 0xFC) | (spix -> ClkSrc);		//0xFC=11111100
+			SPCTL = (SPCTL & 0xF3) | (spix -> Mode << 2);	//0xF3=11110011
+			SPCTL = (SPCTL & 0xDF) | (spix -> Tran << 5);	//0xDF=11011111
+			SPCTL = (SPCTL & 0xBF) | (spix -> Run << 6);  	//0xBF=10111111
 			return FSC_SUCCESS;
 		}
 		
