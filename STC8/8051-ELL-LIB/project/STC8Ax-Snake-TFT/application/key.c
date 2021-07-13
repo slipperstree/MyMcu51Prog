@@ -1,6 +1,7 @@
 // ******* 根据需要修改头文件定义，key.h 和 common.h 是必须的 ***********************************
 #include "key.h"
 #include "common.h"
+#include "ILI9163LCD.h"
 
 // ******* 根据硬件电气连接修改下列定义 ***********************************
 
@@ -29,7 +30,12 @@
 
     // 按键1 单击
     void doBtn1Click(){
-        P55 = 1;
+        P55 = ~P55;
+        //UART1_Isr_Send_String("init！");
+        //ILI9163_Init();
+        //UART1_Isr_Send_String("init ok！");
+        ILI9163_FILL_BACKGROUND_SIZE(160, 128, 0xf8, 0x00);
+        //UART1_Isr_Send_String("ILI9163_FILL_Rectange ok！");
     }
 
     // 按键1 双击
@@ -40,17 +46,19 @@
     // 按键1 长按（只触发一次）
     void doBtn1KeepPressStart(){
         P55 = 1;
-        UART1_Isr_Send_String("按钮1被长按");
+        UART1_Isr_Send_String("按钮1被长按 spi");
     }
 
     // 按键1 长按连击（触发多次）
     void doBtn1KeepPressKeepping(){
-        
+        UART1_Isr_Send_String("按钮1 spi");
+        ILI9163_FILL_Rectange(0, 0, 100, 100, 0x00, 0x12);
     }
 
     // 按键2 单击
     void doBtn2Click(){
         P55 = 0;
+        ILI9163_FILL_BACKGROUND_SIZE(160, 128, 0x00, 0x00);
     }
 
     // 按键2 双击
@@ -94,7 +102,7 @@
         // 参数4：按键发生【按住不放开始事件】】时希望被调用的函数名
         // 参数5：idx++不用改
         // 根据业务的需要，用不上的事件直接传递 0 即可
-        keyScanCommon(BTN1, doBtn1Click, 0, doBtn1KeepPressStart, 0, idx++);
+        keyScanCommon(BTN1, doBtn1Click, 0, doBtn1KeepPressStart, doBtn1KeepPressKeepping, idx++);
         keyScanCommon(BTN2, doBtn2Click, 0, doBtn2KeepPressStart, doBtn2KeepPressKeepping, idx++);
         //keyScanCommon(BTN3, doBtn3Click,             0, idx++); // 不需要双击事件
         //keyScanCommon(BTN4,           0, doBtn4DBClick, idx++); // 不需要单击事件

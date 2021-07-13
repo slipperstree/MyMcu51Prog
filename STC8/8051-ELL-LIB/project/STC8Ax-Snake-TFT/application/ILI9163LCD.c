@@ -1,5 +1,6 @@
 #include "ILI9163LCD.h"
 #include "font.h"
+#include "common.h"
 
 void ILI9163_delay(unsigned int Count)
 {
@@ -11,81 +12,154 @@ void ILI9163_delay(unsigned int Count)
     }
 }
 
+// SPI发送一个字节
+uint8_t MY_SPI_SendByte(uint8_t dat)
+{
+    SPDAT = dat;
+    while (!(SPI_GET_FLAG()));
+    //TODO: wait a while... for test
+    // _nop_();_nop_();_nop_();
+    // ILI9163_delay(1);  
+    SPI_CLEAR_FLAG();
+    return SPDAT;
+}
+
+uint8_t MY_SPI_SendByte_nowait(uint8_t dat)
+{
+    // SPDAT = dat; 
+    // SPI_CLEAR_FLAG();
+    // return SPDAT;
+    SPDAT = dat;
+    while (!(SPI_GET_FLAG()));
+    //TODO: wait a while... for test
+    // ILI9163_delay(1);
+    // _nop_();_nop_();_nop_();
+    SPI_CLEAR_FLAG();
+    return SPDAT;
+}
+
 void ILI9163_W_Command(unsigned char cmd){
     LCD_CLR_DC();
     MY_SPI_SendByte(cmd);
 }
 
-void ILI9163_W_Command_16bit(u16 cmd){
-    LCD_CLR_DC();
-    MY_SPI_SendHalfWord(cmd);
-}
-
-void ILI9163_W_Data(unsigned char data){
+void ILI9163_W_Data(unsigned char dat){
     LCD_SET_DC();
-    MY_SPI_SendByte(data);
-}
-
-void ILI9163_W_Data_16bit(u16 data){
-    LCD_SET_DC();
-    MY_SPI_SendHalfWord(data);
+    MY_SPI_SendByte(dat);
 }
 
 void ILI9163_Reset(void){
     LCD_SET_RESET();
-    //ILI9163_delay(5);
+    ILI9163_delay(5);
     LCD_CLR_RESET();
-    //ILI9163_delay(5);
+    ILI9163_delay(5);
     LCD_SET_RESET();
-    //ILI9163_delay(5);
+    ILI9163_delay(5);
 }
 
 void ILI9163_Init(void){
 
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-	/* 使能LCD引脚相关的时钟 */
- 	LCD_DC_APBxClock_FUN ( LCD_DC_CLK|LCD_DC_PIN, ENABLE );
-    LCD_DC_APBxClock_FUN ( LCD_RESET_CLK|LCD_RESET_PIN, ENABLE );
-    LCD_DC_APBxClock_FUN ( LCD_CS_CLK|LCD_CS_PIN, ENABLE );
-
-    /* 配置LCD的 DC引脚，普通IO即可 */
-    GPIO_InitStructure.GPIO_Pin = LCD_DC_PIN;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(LCD_DC_PORT, &GPIO_InitStructure);
-
-    /* 配置LCD的 RESET引脚，普通IO即可 */
-    GPIO_InitStructure.GPIO_Pin = LCD_RESET_PIN;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(LCD_RESET_PORT, &GPIO_InitStructure);
-
-    /* 配置LCD的 CS引脚，普通IO即可 */
-    GPIO_InitStructure.GPIO_Pin = LCD_CS_PIN;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(LCD_CS_PORT, &GPIO_InitStructure);
-
     LCD_CLR_CS();
 
     ILI9163_Reset(); // HardReset
+    ILI9163_delay(200);
 
     ILI9163_W_Command(0x01); // Software reset
+    ILI9163_delay(200);
 
     ILI9163_W_Command(0x11); // Exit Sleep
     ILI9163_delay(200);
 
     ILI9163_W_Command(0x26); // Set Default Gamma
     ILI9163_W_Data(0x04);
+    ILI9163_delay(10);
 
     ILI9163_W_Command(0x3a); // Set Color Format
     ILI9163_W_Data(0x05);
+    ILI9163_delay(10);
 
     ILI9163_W_Command(0x36); // RGB ，显示方向设置
-    ILI9163_W_Data(0xA8);
+    //ILI9163_W_Data(0xA8);
+    ILI9163_W_Data(0x60);
+    ILI9163_delay(10);
 
     ILI9163_W_Command(0x29); //  Display On
+    ILI9163_delay(10);
+
+    
+    //---------
+
+    
+
+    // ILI9163_Reset(); // HardReset
+
+    // ILI9163_W_Command(0x01); // Software reset
+
+    // ILI9163_W_Command(0x11); // Exit Sleep
+    // ILI9163_delay(200);
+
+    // ILI9163_W_Command(0xB1);// Set Frame Rate
+    //     ILI9163_W_Data(0x0e);
+    //     ILI9163_W_Data(0x10);
+
+    // ILI9163_W_Command(0xC0); // Set VRH1[4:0] & VC[2:0] for VCI1 & GVDD
+    //     //ILI9163_W_Data(0x08); // 4.4V
+    //     ILI9163_W_Data(0x1F); // 3.0V ：经测试，LED，VCC接3.3V时两者设置都可以
+    //     ILI9163_W_Data(0x00);
+
+    // ILI9163_W_Command(0xC1); // Set BT[2:0] for AVDD & VCL & VGH & VGL
+    //     ILI9163_W_Data(0x05);
+
+    // ILI9163_W_Command(0xC5); // Set VMH[6:0] & VML[6:0] for VOMH & VCOML
+    //     //ILI9163_W_Data(0x38); //VComH = 3.9v
+    //     ILI9163_W_Data(0x24); //VComH = 3.4v ：经测试，LED，VCC接3.3V时两者设置都可以
+        
+    //     ILI9163_W_Data(0x40); //VComL = -0.9v
+    //     //ILI9163_W_Data(0x64); //VComL = 0.0v ：经测试，LED，VCC接3.3V时两者设置都可以
+
+    // ILI9163_W_Command(0xf2); // Enable Gamma bit
+    // ILI9163_W_Data(0x01);
+    // ILI9163_W_Command(0xE0); 
+    // ILI9163_W_Data(0x3f);// p1
+    // ILI9163_W_Data(0x22);// p2
+    // ILI9163_W_Data(0x20);// p3
+    // ILI9163_W_Data(0x30);// p4
+    // ILI9163_W_Data(0x29);// p5
+    // ILI9163_W_Data(0x0c);// p6
+    // ILI9163_W_Data(0x4e);// p7
+    // ILI9163_W_Data(0xb7);// p8
+    // ILI9163_W_Data(0x3c);// p9
+    // ILI9163_W_Data(0x19);// p10
+    // ILI9163_W_Data(0x22);// p11
+    // ILI9163_W_Data(0x1e);// p12
+    // ILI9163_W_Data(0x02);// p13
+    // ILI9163_W_Data(0x01);// p14
+    // ILI9163_W_Data(0x00);// p15
+    // ILI9163_W_Command(0xE1); 
+    // ILI9163_W_Data(0x00);// p1
+    // ILI9163_W_Data(0x1b);// p2
+    // ILI9163_W_Data(0x1f);// p3
+    // ILI9163_W_Data(0x0f);// p4
+    // ILI9163_W_Data(0x16);// p5
+    // ILI9163_W_Data(0x13);// p6
+    // ILI9163_W_Data(0x31);// p7
+    // ILI9163_W_Data(0x84);// p8
+    // ILI9163_W_Data(0x43);// p9
+    // ILI9163_W_Data(0x06);// p10
+    // ILI9163_W_Data(0x1d);// p11
+    // ILI9163_W_Data(0x21);// p12
+    // ILI9163_W_Data(0x3d);// p13
+    // ILI9163_W_Data(0x3e);// p14
+    // ILI9163_W_Data(0x3f);// p15
+    // ILI9163_W_Command(0xB4); 
+    // ILI9163_W_Data(0x00);
+    // ILI9163_W_Command(0x26); // Set Default Gamma
+    // ILI9163_W_Data(0x04);
+    // ILI9163_W_Command(0x3a); // Set Color Format
+    // ILI9163_W_Data(0x05);
+    // ILI9163_W_Command(0x36); // RGB ，显示方向设置
+    // ILI9163_W_Data(0xA8);
+    // ILI9163_W_Command(0x29); //  Display On
 }
 
 static void setAddress(u16 x, u16 y, u16 W16, u16 H16){
@@ -132,18 +206,20 @@ void ILI9163_FILL_BACKGROUND_128x128(unsigned char colorH, unsigned char colorL)
             MY_SPI_SendByte(colorH);
             //asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
             //asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-            //ILI9163_delay(5);
+            //TODO: wait a while... for test
+            //ILI9163_delay(1);
             MY_SPI_SendByte(colorL);
             //asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
             //asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-            //ILI9163_delay(5);
+            //TODO: wait a while... for test
+            //ILI9163_delay(1);
             //MY_SPI_SendByte_no_wait(colorH);
             //MY_SPI_SendByte_no_wait(colorL);
       }
     }
 
     LCD_SET_CS();
-    LCD_CLR_CS();
+    //LCD_CLR_CS();
 }
 
 void ILI9163_FILL_IMG_128x128(unsigned char const* img){
@@ -177,7 +253,7 @@ void ILI9163_FILL_IMG_128x128(unsigned char const* img){
     }
 
     LCD_SET_CS();
-    LCD_CLR_CS();
+    //LCD_CLR_CS();
 }
 
 void ILI9163_FILL_BACKGROUND_240x320(unsigned char colorH, unsigned char colorL){
@@ -202,11 +278,15 @@ void ILI9163_FILL_Rectange(u16 x, u16 y, u16 W16, u16 H16,
     i=W16*H16;
     while(i--){
         MY_SPI_SendByte_nowait(colorH);
+        //TODO: wait a while... for test
+        //ILI9163_delay(1);
         MY_SPI_SendByte_nowait(colorL);
+        //TODO: wait a while... for test
+        //ILI9163_delay(1);
     }
 
     LCD_SET_CS();
-    LCD_CLR_CS();
+    //LCD_CLR_CS();
 }
 
 //在指定位置显示一个字符,包括部分字符
@@ -252,7 +332,7 @@ void ILI9163_ShowChar(u8 x,u8 y,u8 chr,u8 Char_Size,
                 }
 
                 LCD_SET_CS();
-                LCD_CLR_CS();
+                //LCD_CLR_CS();
 			#endif
 		}
 }

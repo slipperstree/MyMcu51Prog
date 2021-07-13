@@ -13,6 +13,7 @@
 #include "main.h"
 #include "common.h"
 #include "key.h"
+#include "ILI9163LCD.h"
 /*-----------------------------------------------------------------------
 |                                 DATA                                  |
 -----------------------------------------------------------------------*/
@@ -29,8 +30,11 @@
 int main(void)
 {
 	STC8x_System_Init();
-
   KEY_init();
+
+  ILI9163_Init();
+  ILI9163_FILL_Rectange(0,0, 300, 300, 0xf8, 0x00);
+  UART1_Isr_Send_String("333");
 
   P55 = 0;
 	for(;;)

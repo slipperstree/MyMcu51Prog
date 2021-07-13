@@ -1,33 +1,25 @@
 #ifndef __ILI9163LCD_H
 #define __ILI9163LCD_H
 
-#include "stm32f10x.h"
+#include "common.h"
 
 /*************************端口/引脚定义区域***********************/
+
 //命令/数据选择端口(DC),也就是红色小板LCD上标明的AO接口 普通GPIO即可
-#define      LCD_DC_APBxClock_FUN       RCC_APB2PeriphClockCmd
-#define      LCD_DC_CLK                  RCC_APB2Periph_GPIOA    
-#define      LCD_DC_PORT                 GPIOA
-#define      LCD_DC_PIN                  GPIO_Pin_2
+#define      LCD_DC_PORT                 P11
 
 //RESET引脚 普通GPIO即可
-#define      LCD_RESET_APBxClock_FUN       RCC_APB2PeriphClockCmd
-#define      LCD_RESET_CLK                  RCC_APB2Periph_GPIOA    
-#define      LCD_RESET_PORT                 GPIOA
-#define      LCD_RESET_PIN                  GPIO_Pin_3
+#define      LCD_RESET_PORT              P10
 
 //CS引脚 普通GPIO即可
-#define      LCD_CS_APBxClock_FUN       RCC_APB2PeriphClockCmd
-#define      LCD_CS_CLK                  RCC_APB2Periph_GPIOA    
-#define      LCD_CS_PORT                 GPIOA
-#define      LCD_CS_PIN                  GPIO_Pin_4
+#define      LCD_CS_PORT                 P12
 
-#define LCD_SET_CS()	GPIO_SetBits(LCD_CS_PORT, LCD_CS_PIN)
-#define LCD_CLR_CS()	GPIO_ResetBits(LCD_CS_PORT, LCD_CS_PIN)
-#define LCD_SET_DC()	GPIO_SetBits(LCD_DC_PORT, LCD_DC_PIN)
-#define LCD_CLR_DC()	GPIO_ResetBits(LCD_DC_PORT, LCD_DC_PIN)
-#define LCD_SET_RESET()	GPIO_SetBits(LCD_RESET_PORT, LCD_RESET_PIN)
-#define LCD_CLR_RESET()	GPIO_ResetBits(LCD_RESET_PORT, LCD_RESET_PIN)
+#define LCD_SET_CS()	LCD_CS_PORT=1;ILI9163_delay(10);
+#define LCD_CLR_CS()	LCD_CS_PORT=0;ILI9163_delay(10);
+#define LCD_SET_DC()	LCD_DC_PORT=1;ILI9163_delay(10);
+#define LCD_CLR_DC()	LCD_DC_PORT=0;ILI9163_delay(10);
+#define LCD_SET_RESET()	LCD_RESET_PORT=1;ILI9163_delay(10);
+#define LCD_CLR_RESET()	LCD_RESET_PORT=0;ILI9163_delay(10);
 
 void ILI9163_Init(void);
 void ILI9163_delay(unsigned int Count);

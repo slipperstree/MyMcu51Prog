@@ -29,7 +29,13 @@
             "stc8x_uart.h": "c",
             "common_.h": "c",
             "common.h": "c",
-            "key.h": "c"
+            "key.h": "c",
+            "ell_lib.h": "c",
+            "array": "c",
+            "iterator": "c",
+            "string": "c",
+            "string_view": "c",
+            "vector": "c"
         },
         "C_Cpp.default.intelliSenseMode": "gcc-arm",
         "files.autoGuessEncoding": true,
